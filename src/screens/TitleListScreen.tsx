@@ -7,12 +7,17 @@ import { RootStackParamList } from '../../App'; // Importar tipos de navegação
 import { Title } from '../types';
 import { getTitles, updateTitle, deleteTitle } from '../services/storageService';
 import { AntDesign } from '@expo/vector-icons'; // Instalar @expo/vector-icons
+import { useTheme } from '../context/ThemeContext';
+import { colors } from '../styles/colors';
 
 type TitleListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TitleList'>;
 
 // Instalar @expo/vector-icons: npx expo install @expo/vector-icons
 
 const TitleListScreen: React.FC = () => {
+    const { theme } = useTheme();
+    const themeColors = colors[theme];
+    const styles = createStyles(theme, themeColors);
     const navigation = useNavigation<TitleListScreenNavigationProp>();
     const [titles, setTitles] = useState<Title[]>([]);
     const [loading, setLoading] = useState(true);
@@ -93,8 +98,8 @@ const TitleListScreen: React.FC = () => {
 
     if (loading) {
         return (
-            <View style={styles.centered}>
-                <Text>Carregando títulos...</Text>
+            <View style={[styles.centered, { backgroundColor: themeColors.background }]}>
+                <Text style={{ color: themeColors.text }}>Carregando títulos...</Text>
             </View>
         );
     }
@@ -103,8 +108,8 @@ const TitleListScreen: React.FC = () => {
         <View style={styles.container}>
             {titles.length === 0 ? (
                 <View style={styles.centered}>
-                    <Text>Nenhum título cadastrado ainda.</Text>
-                    <Text>Toque no '+' para adicionar um novo título.</Text>
+                    <Text style={{ color: themeColors.text }}>Nenhum título cadastrado ainda.</Text>
+                    <Text style={{ color: themeColors.text }}>Toque no '+' para adicionar um novo título.</Text>
                 </View>
             ) : (
                 <FlatList
@@ -125,73 +130,83 @@ const TitleListScreen: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f0f0f0',
-    },
-    centered: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    listContent: {
-        paddingBottom: 80, // Espaço para o FAB
-    },
-    titleItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#fff',
-        padding: 15,
-        marginVertical: 5,
-        marginHorizontal: 10,
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 1.41,
-        elevation: 2,
-    },
-    titleName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        flex: 1, // Permite que o texto ocupe o espaço disponível
-    },
-    chapterControl: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginLeft: 10,
-        marginRight: 10,
-    },
-    chapterButton: {
-        padding: 5,
-    },
-    chapterText: {
-        fontSize: 18,
-        marginHorizontal: 10,
-        fontWeight: '600',
-    },
-    deleteButton: {
-        padding: 5,
-        marginLeft: 10,
-    },
-    fab: {
-        position: 'absolute',
-        width: 60,
-        height: 60,
-        alignItems: 'center',
-        justifyContent: 'center',
-        right: 30,
-        bottom: 30,
-        backgroundColor: '#007AFF', // Cor azul padrão do iOS
-        borderRadius: 30,
-        elevation: 4, // Sombra no Android
-        shadowColor: '#000', // Sombra no iOS
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-    },
-});
+const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: themeColors.background,
+        },
+        centered: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: themeColors.background,
+        },
+        listContent: {
+            paddingBottom: 80,
+        },
+        titleItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: themeColors.card,
+            padding: 15,
+            marginVertical: 5,
+            marginHorizontal: 10,
+            borderRadius: 8,
+            ...(theme === 'light'
+                ? {
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 1.41,
+                    elevation: 2,
+                }
+                : {
+                    borderWidth: 1,
+                    borderColor: themeColors.border,
+                }),
+        },
+        titleName: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: themeColors.text,
+        },
+        chapterControl: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginLeft: 10,
+            marginRight: 10,
+        },
+        chapterButton: {
+            padding: 5,
+        },
+        chapterText: {
+            fontSize: 18,
+            marginHorizontal: 10,
+            fontWeight: '600',
+            color: themeColors.text,
+        },
+        deleteButton: {
+            padding: 5,
+            marginLeft: 10,
+        },
+        fab: {
+            position: 'absolute',
+            width: 60,
+            height: 60,
+            alignItems: 'center',
+            justifyContent: 'center',
+            right: 30,
+            bottom: 30,
+            backgroundColor: themeColors.primary,
+            borderRadius: 30,
+            elevation: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+        },
+    });
 
 export default TitleListScreen;

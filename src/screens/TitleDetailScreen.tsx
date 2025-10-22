@@ -15,10 +15,16 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { Title } from '../types';
 import { addTitle, updateTitle, getTitles } from '../services/storageService';
+import { useTheme } from '../context/ThemeContext';
+import { colors } from '../styles/colors';
 
 type TitleDetailScreenProps = NativeStackScreenProps<RootStackParamList, 'TitleDetail'>;
 
 const TitleDetailScreen: React.FC = () => {
+    const { theme } = useTheme();
+    const themeColors = colors[theme];
+    const styles = createStyles(theme, themeColors);
+    
     const navigation = useNavigation<TitleDetailScreenProps['navigation']>();
     const route = useRoute<TitleDetailScreenProps['route']>();
     const { id } = route.params || {}; // Pega o ID se estiver editando
@@ -144,71 +150,80 @@ const TitleDetailScreen: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: '#f0f0f0',
-    },
-    form: {
-        backgroundColor: '#fff',
-        padding: 20,
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    label: {
-        fontSize: 16,
-        marginBottom: 5,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        padding: 10,
-        borderRadius: 5,
-        marginBottom: 15,
-        fontSize: 16,
-        color: '#333',
-    },
-    chapterInputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    chapterInput: {
-        flex: 1,
-        textAlign: 'center',
-        marginHorizontal: 10,
-    },
-    chapterAdjustButton: {
-        backgroundColor: '#007AFF',
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    chapterAdjustButtonText: {
-        color: '#fff',
-        fontSize: 24,
-        fontWeight: 'bold',
-    },
-    saveButton: {
-        backgroundColor: '#28a745', // Verde para salvar
-        padding: 15,
-        borderRadius: 5,
-        alignItems: 'center',
-    },
-    saveButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-});
+const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light) =>
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            padding: 20,
+            backgroundColor: themeColors.background,
+        },
+        form: {
+            backgroundColor: themeColors.card,
+            padding: 20,
+            borderRadius: 10,
+            ...(theme === 'light'
+                ? {
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 3.84,
+                    elevation: 5,
+                }
+                : {
+                    borderWidth: 1,
+                    borderColor: themeColors.border,
+                }),
+        },
+        label: {
+            fontSize: 16,
+            marginBottom: 5,
+            fontWeight: 'bold',
+            color: themeColors.text,
+        },
+        input: {
+            borderWidth: 1,
+            borderColor: themeColors.border,
+            backgroundColor: themeColors.background,
+            padding: 10,
+            borderRadius: 5,
+            marginBottom: 15,
+            fontSize: 16,
+            color: themeColors.text,
+        },
+        chapterInputContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginBottom: 15,
+        },
+        chapterInput: {
+            flex: 1,
+            textAlign: 'center',
+            marginHorizontal: 10,
+        },
+        chapterAdjustButton: {
+            backgroundColor: themeColors.primary,
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        chapterAdjustButtonText: {
+            color: '#fff',
+            fontSize: 24,
+            fontWeight: 'bold',
+        },
+        saveButton: {
+            backgroundColor: themeColors.primary,
+            padding: 15,
+            borderRadius: 5,
+            alignItems: 'center',
+        },
+        saveButtonText: {
+            color: '#fff',
+            fontSize: 18,
+            fontWeight: 'bold',
+        },
+    });
 
 export default TitleDetailScreen;

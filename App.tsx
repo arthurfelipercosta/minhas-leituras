@@ -1,25 +1,44 @@
-// App.tsx
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import TitleListScreen from './src/screens/TitleListScreen';
-import TitleDetailScreen from './src/screens/TitleDetailScreen'; // Vamos criar este arquivo em breve
+import TitleDetailScreen from './src/screens/TitleDetailScreen';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { colors } from './src/styles/colors';
+import { ThemeToggleButton } from './src/components/ThemeToggleButton';
 
-// Definir os tipos para as rotas e seus parâmetros
 export type RootStackParamList = {
-  TitleList: undefined; // A tela de lista não receberá parâmetros inicialmente
-  TitleDetail: { id?: string } | undefined; // A tela de detalhes pode receber um ID para edição
+  TitleList: undefined;
+  TitleDetail: { id?: string } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-export default function App() {
+function AppNavigator() {
+  const { theme } = useTheme();
+  const themeColors = colors[theme];
+
+  const navigationTheme = {
+    ...(theme === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(theme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+      background: themeColors.background,
+      text: themeColors.text,
+      card: themeColors.card,
+      border: themeColors.border,
+      primary: themeColors.primary,
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator initialRouteName="TitleList">
         <Stack.Screen
           name="TitleList"
           component={TitleListScreen}
-          options={{ title: 'Minhas Leituras' }}
+          options={{
+            title: 'Minhas Leituras',
+            headerRight: () => <ThemeToggleButton />,
+          }}
         />
         <Stack.Screen
           name="TitleDetail"
@@ -30,5 +49,13 @@ export default function App() {
         />
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppNavigator />
+    </ThemeProvider>
   );
 }
