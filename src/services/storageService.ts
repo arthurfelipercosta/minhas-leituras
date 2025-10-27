@@ -26,11 +26,12 @@ export const saveTitles = async (titles: Title[]) => {
     }
 };
 
-export const addTitle = async (name: string, initialChapter: number = 0): Promise<Title> => {
+export const addTitle = async (name: string, initialChapter: number = 0, siteUrl?: string): Promise<Title> => {
     const newTitle: Title = {
         id: uuid.v4().toString(), // Gera um ID único
         name,
         currentChapter: initialChapter,
+        ...(siteUrl ? { siteUrl } : {}),
     };
     const existingTitles = await getTitles();
     await saveTitles([...existingTitles, newTitle]);

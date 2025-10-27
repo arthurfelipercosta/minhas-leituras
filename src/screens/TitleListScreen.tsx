@@ -1,6 +1,6 @@
 // src/screens/TitleListScreen.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native'; // Importar Platform
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App'; // Importar tipos de navegação
@@ -9,10 +9,14 @@ import { getTitles, updateTitle, deleteTitle } from '../services/storageService'
 import { AntDesign } from '@expo/vector-icons'; // Instalar @expo/vector-icons
 import { useTheme } from '../context/ThemeContext';
 import { colors } from '../styles/colors';
+import * as Clipboard from 'expo-clipboard'; // Importar Clipboard
+import Toast from 'react-native-toast-message';
 
 type TitleListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TitleList'>;
 
 // Instalar @expo/vector-icons: npx expo install @expo/vector-icons
+// Instalar expo-clipboard: npx expo install expo-clipboard
+// Instalar react-native-toast-message com npx expo install, npm install ou yarn add
 
 const TitleListScreen: React.FC = () => {
     const { theme } = useTheme();
@@ -61,6 +65,11 @@ const TitleListScreen: React.FC = () => {
                     onPress: async () => {
                         await deleteTitle(id);
                         await loadTitles();
+                        Toast.show({
+                            type: 'success',
+                            text1: 'Título deletado!',
+                            text2: 'O título foi removido com sucesso.',
+                        })
                     },
                 },
             ],
@@ -68,9 +77,31 @@ const TitleListScreen: React.FC = () => {
         );
     };
 
+    // Função para copiar o siteUrl para a área de transferência
+    const handleCopySiteUrl = async (url: string | undefined) => {
+        if (url) {
+            Toast.show({
+                type: 'success',
+                text1: 'Link Copiado!',
+                text2: 'O link foi copiado com sucesso para a área de transferência.',
+            })
+        } else {
+            Toast.show({
+                type: 'info',
+                text1: 'Aviso!',
+                text2: 'Nenhum link de site disponível para este título.',
+            })
+        }
+    };
+
     const renderTitleItem = ({ item }: { item: Title }) => (
         <View style={styles.titleItem}>
-            <TouchableOpacity onPress={() => navigation.navigate('TitleDetail', { id: item.id })}>
+            <TouchableOpacity
+                onPress={() => {
+                    item.siteUrl ? handleCopySiteUrl(item.siteUrl) : navigation.navigate('TitleDetail', { id: item.id });
+                }}
+                onLongPress={() => navigation.navigate('TitleDetail', { id: item.id }) // Navegar para a edição com um long press
+                }>
                 <Text style={styles.titleName}>{item.name}</Text>
             </TouchableOpacity>
             <View style={styles.chapterControl}>
@@ -93,7 +124,7 @@ const TitleListScreen: React.FC = () => {
             <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
                 <AntDesign name="delete" size={24} color="gray" />
             </TouchableOpacity>
-        </View>
+        </View >
     );
 
     if (loading) {

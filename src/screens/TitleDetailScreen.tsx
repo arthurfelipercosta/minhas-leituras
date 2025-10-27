@@ -8,7 +8,6 @@ import {
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
-    Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,6 +16,7 @@ import { Title } from '../types';
 import { addTitle, updateTitle, getTitles } from '../services/storageService';
 import { useTheme } from '../context/ThemeContext';
 import { colors } from '../styles/colors';
+import Toast from 'react-native-toast-message';
 
 type TitleDetailScreenProps = NativeStackScreenProps<RootStackParamList, 'TitleDetail'>;
 
@@ -24,13 +24,14 @@ const TitleDetailScreen: React.FC = () => {
     const { theme } = useTheme();
     const themeColors = colors[theme];
     const styles = createStyles(theme, themeColors);
-    
+
     const navigation = useNavigation<TitleDetailScreenProps['navigation']>();
     const route = useRoute<TitleDetailScreenProps['route']>();
     const { id } = route.params || {}; // Pega o ID se estiver editando
 
     const [titleName, setTitleName] = useState('');
     const [currentChapter, setCurrentChapter] = useState('0');
+    const [siteUrl, setSiteUrl] = useState('');
     const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
@@ -44,6 +45,7 @@ const TitleDetailScreen: React.FC = () => {
                     setTitleName(titleToEdit.name);
                     // Garante que seja um inteiro para exibição
                     setCurrentChapter(Math.floor(titleToEdit.currentChapter).toString());
+                    setSiteUrl(titleToEdit.siteUrl || '') // Carrega o siteUrl para edição
                 }
             };
             loadTitleToEdit();
@@ -51,18 +53,36 @@ const TitleDetailScreen: React.FC = () => {
             setIsEditing(false);
             setTitleName('');
             setCurrentChapter('0');
+            setSiteUrl('');
         }
     }, [id]);
 
     const handleSave = async () => {
         if (!titleName.trim()) {
-            Alert.alert('Erro', 'O nome do título não pode ser vazio.');
+            Toast.show({
+                type: 'error',
+                text1: 'Erro',
+                text2: 'O nome do título não pode ser vazio.',
+            });
             return;
         }
 
         const chapterNumber = parseInt(currentChapter, 10); // Usa parseInt para garantir um inteiro
         if (isNaN(chapterNumber) || chapterNumber < 0) {
-            Alert.alert('Erro', 'O capítulo deve ser um número inteiro válido e não negativo.');
+            Toast.show({
+                type: 'error',
+                text1: 'Erro',
+                text2: 'O capítulo deve ser um número inteiro válido e não negativo.',
+            });
+            return;
+        }
+
+        if (siteUrl && !/^https?:\/\/.+\..+$/.test(siteUrl)) {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro',
+                text2: 'Por favor, insira uma URL válida para o site (ex: https://example.com).',
+            });
             return;
         }
 
@@ -71,12 +91,21 @@ const TitleDetailScreen: React.FC = () => {
                 id: id,
                 name: titleName,
                 currentChapter: chapterNumber,
+                siteUrl: siteUrl.trim() || undefined,
             };
             await updateTitle(updatedTitle);
-            Alert.alert('Sucesso', 'Título atualizado!');
+            Toast.show({
+                type: 'success',
+                text1: 'Sucesso',
+                text2: 'Título atualizado!',
+            });
         } else {
             await addTitle(titleName, chapterNumber);
-            Alert.alert('Sucesso', 'Título adicionado!');
+            Toast.show({
+                type: 'success',
+                text1: 'Sucesso',
+                text2: 'Título adicionado!',
+            });
         }
         navigation.goBack(); // Volta para a tela anterior (TitleListScreen)
     };
@@ -141,6 +170,16 @@ const TitleDetailScreen: React.FC = () => {
                         <Text style={styles.chapterAdjustButtonText}>+</Text>
                     </TouchableOpacity>
                 </View>
+
+                <Text style={styles.label}>URL do Site (Opcional):</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Ex: https://mangadex.org/title/..."
+                    value={siteUrl}
+                    onChangeText={setSiteUrl}
+                    keyboardType="url"
+                    autoCapitalize="none"
+                />
 
                 <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                     <Text style={styles.saveButtonText}>{isEditing ? 'Salvar Edições' : 'Adicionar Título'}</Text>

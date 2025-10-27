@@ -5,6 +5,7 @@ import TitleDetailScreen from './src/screens/TitleDetailScreen';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { colors } from './src/styles/colors';
 import { ThemeToggleButton } from './src/components/ThemeToggleButton';
+import Toast from 'react-native-toast-message';
 
 export type RootStackParamList = {
   TitleList: undefined;
@@ -56,6 +57,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <AppNavigator />
+      <Toast />
     </ThemeProvider>
   );
 }
