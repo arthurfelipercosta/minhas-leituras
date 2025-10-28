@@ -1,6 +1,6 @@
 // src/screens/TitleListScreen.tsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native'; // Importar Platform
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native'; // Importar Platform
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App'; // Importar tipos de navegação
@@ -9,13 +9,12 @@ import { getTitles, updateTitle, deleteTitle } from '../services/storageService'
 import { AntDesign } from '@expo/vector-icons'; // Instalar @expo/vector-icons
 import { useTheme } from '../context/ThemeContext';
 import { colors } from '../styles/colors';
-import * as Clipboard from 'expo-clipboard'; // Importar Clipboard
 import Toast from 'react-native-toast-message';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 type TitleListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TitleList'>;
 
 // Instalar @expo/vector-icons: npx expo install @expo/vector-icons
-// Instalar expo-clipboard: npx expo install expo-clipboard
 // Instalar react-native-toast-message com npx expo install, npm install ou yarn add
 
 const TitleListScreen: React.FC = () => {
@@ -25,6 +24,9 @@ const TitleListScreen: React.FC = () => {
     const navigation = useNavigation<TitleListScreenNavigationProp>();
     const [titles, setTitles] = useState<Title[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+    const [titleToDeleteId, setTitleToDeleteId] = useState<string | null>(null);
 
     const loadTitles = async () => {
         setLoading(true);
@@ -53,28 +55,31 @@ const TitleListScreen: React.FC = () => {
         await loadTitles(); // Recarrega a lista para refletir a mudança
     };
 
-    const handleDelete = (id: string) => {
-        Alert.alert(
-            'Confirmar Exclusão',
-            'Tem certeza que deseja deletar este título?',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Deletar',
-                    style: 'destructive',
-                    onPress: async () => {
-                        await deleteTitle(id);
-                        await loadTitles();
-                        Toast.show({
-                            type: 'success',
-                            text1: 'Título deletado!',
-                            text2: 'O título foi removido com sucesso.',
-                        })
-                    },
-                },
-            ],
-            { cancelable: true }
-        );
+    // Função para confirmar a exclusão
+    const confirmDelete = async () => {
+        if (titleToDeleteId) {
+            await deleteTitle(titleToDeleteId);
+            await loadTitles();
+            Toast.show({
+                type: 'success',
+                text1: 'Título Deletado!',
+                text2: 'O título foi removido com sucesso.',
+            });
+            setTitleToDeleteId(null);
+        }
+        setIsDeleteModalVisible(false); // Fecha o modal após a ação
+    };
+
+    // Função para cancelar a exclusão
+    const cancelDelete = () => {
+        setIsDeleteModalVisible(false);
+        setTitleToDeleteId(null);
+    };
+
+    // Função chamada quando o botão de exclusão é pressionado em um item
+    const handleDeletePress = (id: string) => {
+        setTitleToDeleteId(id);
+        setIsDeleteModalVisible(true);
     };
 
     // Função para copiar o siteUrl para a área de transferência
@@ -94,38 +99,50 @@ const TitleListScreen: React.FC = () => {
         }
     };
 
-    const renderTitleItem = ({ item }: { item: Title }) => (
-        <View style={styles.titleItem}>
-            <TouchableOpacity
-                onPress={() => {
-                    item.siteUrl ? handleCopySiteUrl(item.siteUrl) : navigation.navigate('TitleDetail', { id: item.id });
-                }}
-                onLongPress={() => navigation.navigate('TitleDetail', { id: item.id }) // Navegar para a edição com um long press
-                }>
-                <Text style={styles.titleName}>{item.name}</Text>
-            </TouchableOpacity>
-            <View style={styles.chapterControl}>
+    const renderTitleItem = ({ item }: { item: Title }) => {
+        const currentDay = new Date().getDay(); // 0 para Domingo, 1 para Segunda, etc.
+        const isReleaseDayToday = item.releaseDay !== undefined && item.releaseDay === currentDay;
+        return (
+            <View style={[styles.titleItem, isReleaseDayToday && styles.releaseDayHighlight]}>
                 <TouchableOpacity
-                    onPress={() => handleChapterChange(item, -1)} // Alterado para -1
-                    style={styles.chapterButton}
-                >
-                    <AntDesign name="minus-circle" size={24} color="red" />
+                    onPress={() => {
+                        item.siteUrl ? handleCopySiteUrl(item.siteUrl) : navigation.navigate('TitleDetail', { id: item.id });
+                    }}
+                    onLongPress={() => navigation.navigate('TitleDetail', { id: item.id }) // Navegar para a edição com um long press
+                    }>
+                    <Text style={styles.titleName}>{item.name}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate('TitleDetail', { id: item.id })}>
-                    <Text style={styles.chapterText}>{formatChapterForDisplay(item.currentChapter)}</Text>
+                <View style={styles.chapterControl}>
+                    <TouchableOpacity
+                        onPress={() => handleChapterChange(item, -1)} // Alterado para -1
+                        style={styles.chapterButton}
+                    >
+                        <AntDesign name="minus-circle" size={24} color="red" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => navigation.navigate('TitleDetail', { id: item.id })}>
+                        <Text style={styles.chapterText}>{formatChapterForDisplay(item.currentChapter)}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => handleChapterChange(item, 1)} // Alterado para +1
+                        style={styles.chapterButton}
+                    >
+                        <AntDesign name="plus-circle" size={24} color="green" />
+                    </TouchableOpacity>
+                </View>
+                <TouchableOpacity onPress={() => handleDeletePress(item.id)} style={styles.deleteButton}>
+                    <AntDesign name="delete" size={24} color={themeColors.icon} />
                 </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={() => handleChapterChange(item, 1)} // Alterado para +1
-                    style={styles.chapterButton}
-                >
-                    <AntDesign name="plus-circle" size={24} color="green" />
-                </TouchableOpacity>
-            </View>
-            <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
-                <AntDesign name="delete" size={24} color="gray" />
-            </TouchableOpacity>
-        </View >
-    );
+                <ConfirmationModal
+                    isVisible={isDeleteModalVisible}
+                    title="Confirmar Exclusão"
+                    message="Tem certeza que deseja excluir este título?"
+                    onConfirm={confirmDelete}
+                    onCancel={cancelDelete}
+                    confirmButtonText="Deletar"
+                    cancelButtonText="Cancelar"
+                />
+            </View >)
+    };
 
     if (loading) {
         return (
@@ -229,7 +246,7 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
             alignItems: 'center',
             justifyContent: 'center',
             right: 30,
-            bottom: 30,
+            bottom: 50,
             backgroundColor: themeColors.primary,
             borderRadius: 30,
             elevation: 4,
@@ -237,6 +254,10 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,
             shadowRadius: 3.84,
+        },
+        releaseDayHighlight: {
+            borderColor: 'green', // Ou themeColors.primary, se preferir
+            borderWidth: 2,
         },
     });
 

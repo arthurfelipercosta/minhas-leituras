@@ -17,6 +17,7 @@ import { addTitle, updateTitle, getTitles } from '../services/storageService';
 import { useTheme } from '../context/ThemeContext';
 import { colors } from '../styles/colors';
 import Toast from 'react-native-toast-message';
+import { AntDesign } from '@expo/vector-icons';
 
 type TitleDetailScreenProps = NativeStackScreenProps<RootStackParamList, 'TitleDetail'>;
 
@@ -32,7 +33,10 @@ const TitleDetailScreen: React.FC = () => {
     const [titleName, setTitleName] = useState('');
     const [currentChapter, setCurrentChapter] = useState('0');
     const [siteUrl, setSiteUrl] = useState('');
+    const [releaseDay, setReleaseDay] = useState<number | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+
+    const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']; // Dias da semana para a UI
 
     useEffect(() => {
         if (id) {
@@ -46,6 +50,7 @@ const TitleDetailScreen: React.FC = () => {
                     // Garante que seja um inteiro para exibição
                     setCurrentChapter(Math.floor(titleToEdit.currentChapter).toString());
                     setSiteUrl(titleToEdit.siteUrl || '') // Carrega o siteUrl para edição
+                    setReleaseDay(titleToEdit.releaseDay ?? null) // Carrega o dia salvo ou null
                 }
             };
             loadTitleToEdit();
@@ -54,8 +59,18 @@ const TitleDetailScreen: React.FC = () => {
             setTitleName('');
             setCurrentChapter('0');
             setSiteUrl('');
+            setReleaseDay(null);
         }
     }, [id]);
+
+    const handleClearSiteUrl = () => {
+        setSiteUrl('');
+        Toast.show({
+            type: 'info',
+            text1: 'Link limpo',
+            text2: 'O campo do link do site foi limpo.'
+        });
+    }
 
     const handleSave = async () => {
         if (!titleName.trim()) {
@@ -68,11 +83,11 @@ const TitleDetailScreen: React.FC = () => {
         }
 
         const chapterNumber = parseInt(currentChapter, 10); // Usa parseInt para garantir um inteiro
-        if (isNaN(chapterNumber) || chapterNumber < 0) {
+        if (isNaN(chapterNumber)) {
             Toast.show({
                 type: 'error',
                 text1: 'Erro',
-                text2: 'O capítulo deve ser um número inteiro válido e não negativo.',
+                text2: 'O capítulo deve ser um número inteiro válido.',
             });
             return;
         }
@@ -92,6 +107,7 @@ const TitleDetailScreen: React.FC = () => {
                 name: titleName,
                 currentChapter: chapterNumber,
                 siteUrl: siteUrl.trim() || undefined,
+                releaseDay: releaseDay ?? undefined,
             };
             await updateTitle(updatedTitle);
             Toast.show({
@@ -100,7 +116,7 @@ const TitleDetailScreen: React.FC = () => {
                 text2: 'Título atualizado!',
             });
         } else {
-            await addTitle(titleName, chapterNumber);
+            await addTitle(titleName, chapterNumber, siteUrl.trim() || undefined, releaseDay ?? undefined);
             Toast.show({
                 type: 'success',
                 text1: 'Sucesso',
@@ -129,7 +145,7 @@ const TitleDetailScreen: React.FC = () => {
                     <TouchableOpacity
                         onPress={() => {
                             const num = parseInt(currentChapter, 10);
-                            if (!isNaN(num) && num > 0) {
+                            if (!isNaN(num)) {
                                 setCurrentChapter((num - 1).toString()); // Decrementa 1
                             } else if (isNaN(num)) {
                                 setCurrentChapter('0'); // Se for NaN, define como 0
@@ -149,7 +165,7 @@ const TitleDetailScreen: React.FC = () => {
                         }
                         onBlur={() => {
                             const num = parseInt(currentChapter, 10);
-                            if (isNaN(num) || num < 0) {
+                            if (isNaN(num)) {
                                 setCurrentChapter('0'); // Se inválido, define como 0
                             } else {
                                 setCurrentChapter(num.toString()); // Garante que seja um inteiro em string
@@ -172,17 +188,40 @@ const TitleDetailScreen: React.FC = () => {
                 </View>
 
                 <Text style={styles.label}>URL do Site (Opcional):</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Ex: https://mangadex.org/title/..."
-                    value={siteUrl}
-                    onChangeText={setSiteUrl}
-                    keyboardType="url"
-                    autoCapitalize="none"
-                />
-
+                <View style={styles.siteUrlInputContainer}>
+                    <TextInput
+                        style={[styles.input, styles.siteUrlInput]}
+                        placeholder="Ex: https://mangadex.org/title/..."
+                        value={siteUrl}
+                        onChangeText={setSiteUrl}
+                        keyboardType="url"
+                        autoCapitalize="none"
+                    />
+                    {siteUrl ? ( // Mostra o ícone de lixeira apenas se houver um URL
+                        <TouchableOpacity onPress={handleClearSiteUrl} style={styles.clearSiteUrlButton}>
+                            <AntDesign name="delete" size={24} color="red" />
+                        </TouchableOpacity>
+                    ) : null}
+                </View>
+                <Text style={styles.label}>Dia de Lançamento (Opcional):</Text>
+                <View style={styles.weekDayContainer}>
+                    {weekDays.map((day, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={[
+                                styles.dayButton,
+                                releaseDay === index && styles.selectedDayButton // Estilo condicional
+                            ]}
+                            onPress={() => setReleaseDay(releaseDay === index ? null : index)} // Permite selecionar e deselecionar
+                        >
+                            <Text style={[styles.dayButtonText, releaseDay === index && styles.selectedDayButtonText]}>
+                                {day}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
                 <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                    <Text style={styles.saveButtonText}>{isEditing ? 'Salvar Edições' : 'Adicionar Título'}</Text>
+                    <Text style={styles.saveButtonText}>{isEditing ? 'Salvar' : 'Adicionar'}</Text>
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>
@@ -238,6 +277,22 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
             flex: 1,
             textAlign: 'center',
             marginHorizontal: 10,
+            marginBottom: 0,
+        },
+        siteUrlInputContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginBottom: 15,
+        },
+        siteUrlInput: {
+            flex: 1,
+            marginRight: 10,
+            marginBottom: 0,
+        },
+        clearSiteUrlButton: {
+            padding: 8,
+            justifyContent: 'center',
+            alignItems: 'center',
         },
         chapterAdjustButton: {
             backgroundColor: themeColors.primary,
@@ -262,6 +317,32 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
             color: '#fff',
             fontSize: 18,
             fontWeight: 'bold',
+        },
+        weekDayContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 20,
+        },
+        dayButton: {
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: themeColors.background,
+            borderWidth: 1,
+            borderColor: themeColors.border,
+        },
+        selectedDayButton: {
+            backgroundColor: themeColors.primary,
+            borderColor: themeColors.primary,
+        },
+        dayButtonText: {
+            color: themeColors.text,
+            fontWeight: 'bold',
+        },
+        selectedDayButtonText: {
+            color: '#FFFFFF',
         },
     });
 
