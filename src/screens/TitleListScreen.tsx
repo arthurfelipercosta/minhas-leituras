@@ -1,6 +1,6 @@
 // src/screens/TitleListScreen.tsx
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native'; // Importar Platform
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native'; // Importar Platform
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App'; // Importar tipos de navegação
@@ -11,6 +11,7 @@ import { useTheme } from '../context/ThemeContext';
 import { colors } from '../styles/colors';
 import Toast from 'react-native-toast-message';
 import ConfirmationModal from '../components/ConfirmationModal';
+import * as Clipboard from 'expo-clipboard';
 
 type TitleListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TitleList'>;
 
@@ -24,6 +25,9 @@ const TitleListScreen: React.FC = () => {
     const navigation = useNavigation<TitleListScreenNavigationProp>();
     const [titles, setTitles] = useState<Title[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortOrder, setSortOrder] = useState<'alpha-asc' | 'alpha-desc' | 'release-day'>('alpha-asc');
 
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
     const [titleToDeleteId, setTitleToDeleteId] = useState<string | null>(null);
@@ -55,6 +59,35 @@ const TitleListScreen: React.FC = () => {
         await loadTitles(); // Recarrega a lista para refletir a mudança
     };
 
+    // Função para alternar a ordem de ordenação
+    const handleSortChange = () => {
+        if (sortOrder === 'alpha-asc') {
+            setSortOrder('alpha-desc');
+        } else if (sortOrder === 'alpha-desc') {
+            setSortOrder('release-day');
+        } else { setSortOrder('alpha-asc'); }
+    }
+
+    const displayedTitles = useMemo(() => {
+        const filteredTitles = titles.filter(title => title.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+        switch (sortOrder) {
+            case 'alpha-asc':
+                return filteredTitles.sort((a, b) => a.name.localeCompare(b.name));
+            case 'alpha-desc':
+                return filteredTitles.sort((a, b) => b.name.localeCompare(a.name));
+            case 'release-day':
+                return filteredTitles.sort((a, b) => (a.releaseDay ?? 8) - (b.releaseDay ?? 8));
+            default:
+                return filteredTitles;
+        }
+    }, [titles, searchQuery, sortOrder])
+
+    const getSortButtonText = () => {
+        if (sortOrder === 'alpha-asc') return 'A-Z';
+        if (sortOrder === 'alpha-desc') return 'Z-A';
+        return 'DIA';
+    }
     // Função para confirmar a exclusão
     const confirmDelete = async () => {
         if (titleToDeleteId) {
@@ -85,6 +118,7 @@ const TitleListScreen: React.FC = () => {
     // Função para copiar o siteUrl para a área de transferência
     const handleCopySiteUrl = async (url: string | undefined) => {
         if (url) {
+            await Clipboard.setStringAsync(url);
             Toast.show({
                 type: 'success',
                 text1: 'Link Copiado!',
@@ -132,15 +166,6 @@ const TitleListScreen: React.FC = () => {
                 <TouchableOpacity onPress={() => handleDeletePress(item.id)} style={styles.deleteButton}>
                     <AntDesign name="delete" size={24} color={themeColors.icon} />
                 </TouchableOpacity>
-                <ConfirmationModal
-                    isVisible={isDeleteModalVisible}
-                    title="Confirmar Exclusão"
-                    message="Tem certeza que deseja excluir este título?"
-                    onConfirm={confirmDelete}
-                    onCancel={cancelDelete}
-                    confirmButtonText="Deletar"
-                    cancelButtonText="Cancelar"
-                />
             </View >)
     };
 
@@ -154,14 +179,26 @@ const TitleListScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            {titles.length === 0 ? (
+            <View style={styles.controlsContainer}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Pesquisar Títulos..."
+                    placeholderTextColor={themeColors.text}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                />
+                <TouchableOpacity style={styles.sortButton} onPress={handleSortChange}>
+                    <Text style={styles.sortButtonText}>{getSortButtonText()}</Text>
+                </TouchableOpacity>
+            </View>
+            {displayedTitles.length === 0 ? (
                 <View style={styles.centered}>
-                    <Text style={{ color: themeColors.text }}>Nenhum título cadastrado ainda.</Text>
-                    <Text style={{ color: themeColors.text }}>Toque no '+' para adicionar um novo título.</Text>
+                    <Text style={{ color: themeColors.text }}>{searchQuery ? 'Nenhum título encontrado.' : 'Nenhum título cadastrado ainda.'}</Text>
+                    {!searchQuery && <Text style={{ color: themeColors.text }}>Toque no '+' para adicionar um novo título.</Text>}
                 </View>
             ) : (
                 <FlatList
-                    data={titles}
+                    data={displayedTitles}
                     keyExtractor={(item) => item.id}
                     renderItem={renderTitleItem}
                     contentContainerStyle={styles.listContent}
@@ -174,6 +211,16 @@ const TitleListScreen: React.FC = () => {
             >
                 <AntDesign name="plus" size={24} color="white" />
             </TouchableOpacity>
+
+            <ConfirmationModal
+                isVisible={isDeleteModalVisible}
+                title="Confirmar Exclusão"
+                message="Tem certeza que deseja excluir este título?"
+                onConfirm={confirmDelete}
+                onCancel={cancelDelete}
+                confirmButtonText="Deletar"
+                cancelButtonText="Cancelar"
+            />
         </View>
     );
 };
@@ -235,6 +282,12 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
             fontWeight: '600',
             color: themeColors.text,
         },
+        controlsContainer: {
+            flexDirection: 'row',
+            paddingHorizontal: 10,
+            paddingTop: 10,
+            alignItems: 'center',
+        },
         deleteButton: {
             padding: 5,
             marginLeft: 10,
@@ -258,6 +311,29 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
         releaseDayHighlight: {
             borderColor: 'green', // Ou themeColors.primary, se preferir
             borderWidth: 2,
+        },
+        searchInput: {
+            flex: 1,
+            height: 40,
+            backgroundColor: themeColors.card,
+            color: themeColors.text,
+            borderRadius: 8,
+            paddingHorizontal: 10,
+            borderWidth: 1,
+            borderColor: themeColors.border,
+            marginRight: 10,
+        },
+        sortButton: {
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            backgroundColor: themeColors.primary,
+            borderRadius: 8,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        sortButtonText: {
+            color: 'white',
+            fontWeight: 'bold',
         },
     });
 
