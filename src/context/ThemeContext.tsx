@@ -12,7 +12,7 @@ interface ThemeContextData {
 const ThemeContext = createContext<ThemeContextData>({} as ThemeContextData);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [theme, setTheme] = useState<Theme>(Appearance.getColorScheme() || 'light');
+    const [theme, setTheme] = useState<Theme>('light');
 
     useEffect(() => {
         const loadTheme = async () => {
