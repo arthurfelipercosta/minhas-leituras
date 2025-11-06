@@ -41,7 +41,7 @@ const TitleListScreen: React.FC = () => {
 
     // Função auxiliar para formatar o capítulo para exibição (sem .00 se for inteiro)
     const formatChapterForDisplay = (chapter: number): string => {
-        return Math.floor(chapter).toString(); // Garante que seja um inteiro e converte para string
+        return Number.isInteger(chapter) ? chapter.toString() : chapter.toFixed(1); // Garante que seja um inteiro e converte para string
     };
 
     // Carrega os títulos toda vez que a tela foca

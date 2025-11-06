@@ -48,7 +48,7 @@ const TitleDetailScreen: React.FC = () => {
                 if (titleToEdit) {
                     setTitleName(titleToEdit.name);
                     // Garante que seja um inteiro para exibição
-                    setCurrentChapter(Math.floor(titleToEdit.currentChapter).toString());
+                    setCurrentChapter(titleToEdit.currentChapter.toString());
                     setSiteUrl(titleToEdit.siteUrl || '') // Carrega o siteUrl para edição
                     setReleaseDay(titleToEdit.releaseDay ?? null) // Carrega o dia salvo ou null
                 }
@@ -158,23 +158,31 @@ const TitleDetailScreen: React.FC = () => {
                     <TextInput
                         style={[styles.input, styles.chapterInput]}
                         placeholder="0" // Placeholder para inteiro
-                        keyboardType="numeric"
+                        keyboardType="decimal-pad"
                         value={currentChapter}
-                        onChangeText={(text) =>
-                            setCurrentChapter(text.replace(/[^0-9]/g, '')) // Permite apenas dígitos
-                        }
+                        onChangeText={(text) => {
+                            // Permite dígitos e um único ponto ou vírgula (substituindo vírgula por ponto)
+                            const cleanedText = text.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                            // Garante que não haja múltiplos pontos decimais
+                            const parts = cleanedText.split('.');
+                            if (parts.length > 2) {
+                                setCurrentChapter(`${parts[0]}.${parts.slice(1).join('')}`);
+                            } else {
+                                setCurrentChapter(cleanedText);
+                            }
+                        }}
                         onBlur={() => {
-                            const num = parseInt(currentChapter, 10);
+                            const num = parseFloat(currentChapter); // Usa parseFloat
                             if (isNaN(num)) {
                                 setCurrentChapter('0'); // Se inválido, define como 0
                             } else {
-                                setCurrentChapter(num.toString()); // Garante que seja um inteiro em string
+                                setCurrentChapter(num.toString()); // Garante que seja um número em string
                             }
                         }}
                     />
                     <TouchableOpacity
                         onPress={() => {
-                            const num = parseInt(currentChapter, 10);
+                            const num = parseInt(currentChapter);
                             if (!isNaN(num)) {
                                 setCurrentChapter((num + 1).toString()); // Incrementa 1
                             } else {
