@@ -10,6 +10,7 @@ import { StyleSheet, Text, View } from 'react-native';
 // import de arquivos
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import TitleListScreen from '@/screens/TitleListScreen';
+import TitleDetailScreen from '@/screens/TitleDetailScreen';
 import { colors } from '@/styles/colors';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 
@@ -46,6 +47,13 @@ function AppNavigator() {
           options={{
             title: 'Minhas Leituras',
             headerRight: () => <ThemeToggleButton />,
+          }}
+        />
+        <Stack.Screen
+          name='TitleDetail'
+          component={TitleDetailScreen}
+          options={{
+            title: 'Detalhes do título',
           }}
         />
       </Stack.Navigator>

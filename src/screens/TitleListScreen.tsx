@@ -10,7 +10,7 @@ import Toast from 'react-native-toast-message';
 import * as Clipboard from 'expo-clipboard';
 
 // import de arquivos
-import { RootStackParamList } from '@/../App';
+import { RootStackParamList } from 'App';
 import { getTitles, updateTitle, deleteTitle } from '@/services/storageServices';
 import { Title } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
