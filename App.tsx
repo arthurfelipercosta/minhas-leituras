@@ -45,8 +45,7 @@ function AppNavigator() {
           name='TitleList'
           component={TitleListScreen}
           options={{
-            title: 'Minhas Leituras',
-            headerRight: () => <ThemeToggleButton />,
+            title: 'Minhas Leituras'
           }}
         />
         <Stack.Screen
@@ -54,6 +53,7 @@ function AppNavigator() {
           component={TitleDetailScreen}
           options={{
             title: 'Detalhes do título',
+            headerRight: () => <ThemeToggleButton />,
           }}
         />
       </Stack.Navigator>
