@@ -54,3 +54,23 @@ export const deleteTitle = async (id: string) => {
     const filteredTitles = existingTitles.filter((title) => title.id !== id);
     await saveTitles(filteredTitles);
 };
+
+export const exportTitles = async (): Promise<string> => {
+    try {
+        const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
+        return jsonValue != null ? jsonValue : '[]';
+    } catch (error) {
+        console.error('Erro ao exportar títulos: ', error);
+        return '[]';
+    }
+}
+
+export const importTitles = async (jsonString: string): Promise<void> => {
+    try {
+        const parsedTitles: Title[] = JSON.parse(jsonString);
+        await saveTitles(parsedTitles);
+    } catch (error) {
+        console.error('Erro ao importar títulos: ', error);
+        throw new Error('Formato JSON inválido para importação.');
+    }
+}
