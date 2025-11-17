@@ -1,21 +1,25 @@
 // src/screens/TitleListScreen.tsx
 
 // import de pacotes
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useLayoutEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native'; // Importar Platform
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, FontAwesome6 } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import * as Clipboard from 'expo-clipboard';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 
 // import de arquivos
 import { RootStackParamList } from 'App';
-import { getTitles, updateTitle, deleteTitle } from '@/services/storageServices';
+import { getTitles, updateTitle, deleteTitle, saveTitles } from '@/services/storageServices';
 import { Title } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 
 type TitleListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TitleList'>;
 
@@ -33,8 +37,8 @@ const TitleListScreen: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOrder, setSortOrder] = useState<'alpha-asc' | 'alpha-desc' | 'release-day'>('alpha-asc');
 
-    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
     const [titleToDeleteId, setTitleToDeleteId] = useState<string | null>(null);
+    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
     const loadTitles = async () => {
         setLoading(true);
@@ -42,6 +46,110 @@ const TitleListScreen: React.FC = () => {
         setTitles(storedTitles);
         setLoading(false);
     };
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {/* Botão de Exportar */}
+                    <TouchableOpacity onPress={() => console.log('Botão de Exportar JSON pressionado!')} style={{ marginRight: 15 }}>
+                        <FontAwesome6 name="upload" size={24} color={themeColors.icon} />
+                    </TouchableOpacity>
+                    {/* Botão de Importar */}
+                    <TouchableOpacity onPress={() => console.log('Botão de Importar JSON pressionado!')} style={{ marginRight: 15 }}>
+                        <FontAwesome6 name="download" size={24} color={themeColors.icon} />
+                    </TouchableOpacity>
+                    <ThemeToggleButton />
+                </View>
+            ),
+        });
+    }, [navigation, themeColors]);
+
+    // const confirmExport = useCallback(async () => {
+    //     try {
+    //         const allTitles = await getTitles();
+    //         const jsonString = JSON.stringify(allTitles, null, 2); // Formata para leitura fácil
+    //         const fileName = `minhas-leituras-backup-${new Date().toISOString().split('T')[0]}.json`;
+    //         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+
+    //         await FileSystem.writeAsStringAsync(fileUri, jsonString);
+
+    //         // Removida a lógica específica para 'web'
+    //         if (await Sharing.isAvailableAsync()) {
+    //             await Sharing.shareAsync(fileUri, { mimeType: 'application/json', UTI: 'public.json' });
+    //             Toast.show({
+    //                 type: 'success',
+    //                 text1: 'Backup Exportado!',
+    //                 text2: 'Selecione onde salvar seu arquivo JSON.',
+    //             });
+    //         } else {
+    //             Toast.show({
+    //                 type: 'error',
+    //                 text1: 'Erro ao Exportar',
+    //                 text2: 'Compartilhamento de arquivo não disponível neste dispositivo.',
+    //             });
+    //         }
+    //     } catch (error) {
+    //         console.error('Erro ao exportar backup:', error);
+    //         Toast.show({
+    //             type: 'error',
+    //             text1: 'Erro ao Exportar',
+    //             text2: 'Não foi possível exportar o backup. Tente novamente.',
+    //         });
+    //     } finally {
+    //         setIsExportModalVisible(false); // Fecha o modal após a ação
+    //     }
+    // }, []);
+
+    // const handleExportFile = useCallback(() => {
+    //     setIsExportModalVisible(true);
+    // }, []);
+
+    // const cancelExport = useCallback(() => {
+    //     setIsExportModalVisible(false);
+    // }, []);
+
+    // const handleImportFile = useCallback(async () => {
+    //     try {
+    //         const result = await DocumentPicker.getDocumentAsync({
+    //             type: 'application/json', // Aceita apenas arquivos JSON
+    //             copyToCacheDirectory: true,
+    //         });
+
+    //         if (result.canceled === false && result.assets && result.assets.length > 0) {
+    //             const uri = result.assets[0].uri;
+    //             const fileContent = await FileSystem.readAsStringAsync(uri);
+
+    //             const importedTitles: Title[] = JSON.parse(fileContent);
+
+    //             if (!Array.isArray(importedTitles) || importedTitles.some(t => !t.id || !t.name || typeof t.currentChapter !== 'number')) {
+    //                 throw new Error('Formato de arquivo JSON inválido para importação de títulos. Verifique se o arquivo contém um array de títulos com as propriedades id, name e currentChapter.');
+    //             }
+
+    //             await saveTitles(importedTitles);
+    //             await loadTitles();
+
+    //             Toast.show({
+    //                 type: 'success',
+    //                 text1: 'Backup Importado!',
+    //                 text2: 'Os títulos foram importados com sucesso.',
+    //             });
+    //         } else {
+    //             Toast.show({
+    //                 type: 'info',
+    //                 text1: 'Importação Cancelada',
+    //                 text2: 'Nenhum arquivo JSON selecionado.',
+    //             });
+    //         }
+    //     } catch (error: any) {
+    //         console.error('Erro ao importar backup:', error);
+    //         Toast.show({
+    //             type: 'error',
+    //             text1: 'Erro ao Importar',
+    //             text2: error.message || 'Não foi possível importar o backup. Certifique-se de que é um arquivo JSON válido.',
+    //         });
+    //     }
+    // }, [loadTitles]);
 
     // Função auxiliar para formatar o capítulo para exibição (sem .00 se for inteiro)
     const formatChapterForDisplay = (chapter: number): string => {
@@ -60,7 +168,7 @@ const TitleListScreen: React.FC = () => {
         const updatedChapter = Math.floor(title.currentChapter + delta);
         const updatedTitle = { ...title, currentChapter: updatedChapter >= 0 ? updatedChapter : 0 };
         await updateTitle(updatedTitle);
-        await loadTitles(); // Recarrega a lista para refletir a mudança
+        setTitles(prevTitles => prevTitles.map(t => t.id === updatedTitle.id ? updatedTitle : t));
     };
 
     // Função para alternar a ordem de ordenação
