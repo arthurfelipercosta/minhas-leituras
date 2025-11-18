@@ -23,8 +23,12 @@ const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapter
     const themeColors = colors[theme];
     const styles = createStyles(theme, themeColors);
 
-    const formatChapterForDisplay = (chapter: number): string => {
-        return Number.isInteger(chapter) ? chapter.toString() : chapter.toFixed(1);
+    const formatChapterForDisplay = (chapter: number | undefined | null): string => {
+        if (chapter === undefined || chapter === null) {
+            return '0';
+        }
+        const result = Number.isInteger(chapter) ? chapter.toString() : chapter.toFixed(1).toString();
+        return result;
     };
 
     const currentDay = new Date().getDay();
@@ -52,7 +56,9 @@ const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapter
                     <AntDesign name="minus-circle" size={24} color="red" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => onNavigate(item.id)}>
-                    <Text style={styles.chapterText}>{formatChapterForDisplay(item.currentChapter)}</Text>
+                    <Text style={styles.chapterText}>
+                        {formatChapterForDisplay(item.currentChapter)}
+                    </Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => onChapterChange(item, 1)} style={styles.chapterButton}>
                     <AntDesign name="plus-circle" size={24} color="green" />
@@ -65,8 +71,6 @@ const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapter
         </View>
     );
 };
-
-
 
 const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light) =>
     StyleSheet.create({

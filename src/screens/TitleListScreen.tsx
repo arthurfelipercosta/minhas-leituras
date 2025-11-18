@@ -18,6 +18,7 @@ import { colors } from '@/styles/colors';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { importTitlesFromTXTFile, exportTitlesToTXTFile } from '@/services/jsonService';
+import TitleListItem from '@/components/TitleListItem';
 
 type TitleListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TitleList'>;
 
@@ -197,46 +198,15 @@ const TitleListScreen: React.FC = () => {
         }
     };
 
-    const renderTitleItem = ({ item }: { item: Title }) => {
-        const currentDay = new Date().getDay(); // 0 para Domingo, 1 para Segunda, etc.
-        const isReleaseDayToday = item.releaseDay !== undefined && item.releaseDay === currentDay;
-        return (
-            <View style={[styles.titleItem, isReleaseDayToday && styles.releaseDayHighlight]}>
-                <TouchableOpacity
-                    style={styles.titleTextContainer}
-                    onPress={() => {
-                        item.siteUrl ? handleCopySiteUrl(item.siteUrl) : navigation.navigate('TitleDetail', { id: item.id });
-                    }}
-                    onLongPress={() => navigation.navigate('TitleDetail', { id: item.id }) // Navegar para a edição com um long press
-                    }>
-                    <Text
-                        style={styles.titleName}
-                        numberOfLines={1}
-                        ellipsizeMode='tail'
-                    >{item.name}</Text>
-                </TouchableOpacity>
-                <View style={styles.chapterControl}>
-                    <TouchableOpacity
-                        onPress={() => handleChapterChange(item, -1)} // Alterado para -1
-                        style={styles.chapterButton}
-                    >
-                        <AntDesign name="minus-circle" size={24} color="red" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => navigation.navigate('TitleDetail', { id: item.id })}>
-                        <Text style={styles.chapterText}>{formatChapterForDisplay(item.currentChapter)}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => handleChapterChange(item, 1)} // Alterado para +1
-                        style={styles.chapterButton}
-                    >
-                        <AntDesign name="plus-circle" size={24} color="green" />
-                    </TouchableOpacity>
-                </View>
-                <TouchableOpacity onPress={() => handleDeletePress(item.id)} style={styles.deleteButton}>
-                    <AntDesign name="delete" size={24} color={themeColors.icon} />
-                </TouchableOpacity>
-            </View >)
-    };
+    const renderTitleItem = ({ item }: { item: Title }) => (
+        <TitleListItem
+            item={item}
+            onDelete={handleDeletePress}
+            onChapterChange={handleChapterChange}
+            onNavigate={(id) => navigation.navigate('TitleDetail', { id })}
+            onCopyUrl={handleCopySiteUrl}
+        />
+    );
 
     if (loading) {
         return (
@@ -329,59 +299,11 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
         listContent: {
             paddingBottom: 80,
         },
-        titleItem: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            backgroundColor: themeColors.card,
-            padding: 15,
-            marginVertical: 5,
-            marginHorizontal: 10,
-            borderRadius: 8,
-            ...(theme === 'light'
-                ? {
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 1.41,
-                    elevation: 2,
-                }
-                : {
-                    borderWidth: 1,
-                    borderColor: themeColors.border,
-                }),
-        },
-        titleName: {
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: themeColors.text,
-        },
-        titleTextContainer: {
-            flex: 1,
-            marginRight: 10,
-        },
-        chapterControl: {
-            flexDirection: 'row',
-            alignItems: 'center',
-        },
-        chapterButton: {
-            padding: 5,
-        },
-        chapterText: {
-            fontSize: 18,
-            marginHorizontal: 10,
-            fontWeight: '600',
-            color: themeColors.text,
-        },
         controlsContainer: {
             flexDirection: 'row',
             paddingHorizontal: 10,
             paddingTop: 10,
             alignItems: 'center',
-        },
-        deleteButton: {
-            padding: 5,
-            marginLeft: 10,
         },
         fab: {
             position: 'absolute',
@@ -398,10 +320,6 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,
             shadowRadius: 3.84,
-        },
-        releaseDayHighlight: {
-            borderColor: 'green', // Ou themeColors.primary, se preferir
-            borderWidth: 2,
         },
         searchInput: {
             flex: 1,

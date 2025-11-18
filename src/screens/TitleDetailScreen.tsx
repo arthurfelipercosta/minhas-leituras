@@ -2,7 +2,16 @@
 
 // import de pacotes
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView, // Importar ScrollView
+} from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AntDesign } from '@expo/vector-icons';
@@ -15,7 +24,7 @@ import { addTitle, updateTitle, getTitles } from '@/services/storageServices';
 import { Title } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
-import CoverImageInput from '@/components/CoverImageInput';
+import CoverImageInput from '@/components/CoverImageInput'; // Importar o componente da capa
 
 type TitleDetailScreenProps = NativeStackScreenProps<RootStackParamList, 'TitleDetail'>;
 
@@ -27,15 +36,15 @@ const TitleDetailScreen: React.FC = () => {
     const navigation = useNavigation<TitleDetailScreenProps['navigation']>();
     const route = useRoute<TitleDetailScreenProps['route']>();
     const { id } = route.params || {}; // Pega o ID se estiver editando
-    const [title, setTitle] = useState<Title | null>(null);
 
+    const [title, setTitle] = useState<Title | null>(null); // Estado para o título completo
     const [titleName, setTitleName] = useState('');
     const [currentChapter, setCurrentChapter] = useState('0');
     const [siteUrl, setSiteUrl] = useState('');
     const [releaseDay, setReleaseDay] = useState<number | null>(null);
     const [isEditing, setIsEditing] = useState(false);
 
-    const [coverImageUri, setCoverImageUri] = useState<string | null>(null);
+    const [coverImageUri, setCoverImageUri] = useState<string | null>(null); // Estado para a URI da imagem de capa
 
     const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']; // Dias da semana para a UI
 
@@ -47,48 +56,57 @@ const TitleDetailScreen: React.FC = () => {
                 const titles = await getTitles();
                 const titleToEdit = titles.find((t) => t.id === id);
                 if (titleToEdit) {
+                    setTitle(titleToEdit); // Define o estado 'title'
                     setTitleName(titleToEdit.name);
-                    // Garante que seja um inteiro para exibição
                     setCurrentChapter(titleToEdit.currentChapter.toString());
-                    setSiteUrl(titleToEdit.siteUrl || '') // Carrega o siteUrl para edição
-                    setReleaseDay(titleToEdit.releaseDay ?? null) // Carrega o dia salvo ou null
+                    setSiteUrl(titleToEdit.siteUrl || ''); // Carrega o siteUrl para edição
+                    setReleaseDay(titleToEdit.releaseDay ?? null); // Carrega o dia salvo ou null
                     setCoverImageUri(titleToEdit.coverUri || null); // Carregar a imagem de cover
                 }
             };
             loadTitleToEdit();
         } else {
             setIsEditing(false);
-            setTitle(null);
+            setTitle(null); // Limpa o título se não estiver editando
             setTitleName('');
             setCurrentChapter('0');
             setSiteUrl('');
             setReleaseDay(null);
-            setCoverImageUri(null);
+            setCoverImageUri(null); // Limpa a imagem também
         }
     }, [id]);
 
-    if (title) { setCoverImageUri(title.coverUri || null); }
-
     const handlePickImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Toast.show({
+                type: 'error',
+                text1: 'Permissão Necessária',
+                text2: 'Precisamos de permissão para acessar sua galeria de fotos.',
+            });
+            return;
+        }
+
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
+            mediaTypes: ['images'], // Forma correta para o ImagePicker atual
             allowsEditing: true,
-            aspect: [2, 3],
+            aspect: [2, 3], // Proporção de capa
             quality: 1,
         });
 
-        if (!result.canceled) { setCoverImageUri(result.assets[0].uri) };
-    }
+        if (!result.canceled) {
+            setCoverImageUri(result.assets[0].uri);
+        }
+    };
 
     const handleClearSiteUrl = () => {
         setSiteUrl('');
         Toast.show({
             type: 'info',
             text1: 'Link limpo',
-            text2: 'O campo do link do site foi limpo.'
+            text2: 'O campo do link do site foi limpo.',
         });
-    }
-
+    };
 
     const handleSave = async () => {
         if (!titleName.trim()) {
@@ -100,7 +118,7 @@ const TitleDetailScreen: React.FC = () => {
             return;
         }
 
-        const chapterNumber = parseInt(currentChapter, 10); // Usa parseInt para garantir um inteiro
+        const chapterNumber = parseInt(currentChapter, 10);
         if (isNaN(chapterNumber)) {
             Toast.show({
                 type: 'error',
@@ -120,7 +138,7 @@ const TitleDetailScreen: React.FC = () => {
         }
 
         const titleData: Title = {
-            id: isEditing && title?.id ? title.id : '', // O ID será preenchido por addTitle se for novo, ou pelo 'id' da rota
+            id: isEditing && title?.id ? title.id : '', // O ID será preenchido por addTitle se for novo
             name: titleName,
             currentChapter: chapterNumber,
             siteUrl: siteUrl.trim() || undefined,
@@ -138,7 +156,7 @@ const TitleDetailScreen: React.FC = () => {
                 text2: 'Título atualizado!',
             });
         } else {
-            await addTitle(titleName, chapterNumber, siteUrl.trim() || undefined, releaseDay ?? undefined);
+            await addTitle(titleData); // Agora passamos o objeto titleData completo
             Toast.show({
                 type: 'success',
                 text1: 'Sucesso',
@@ -153,107 +171,112 @@ const TitleDetailScreen: React.FC = () => {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <View style={styles.form}>
-                <Text style={styles.label}>Nome do Título:</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Ex: O Pequeno Príncipe"
-                    value={titleName}
-                    onChangeText={setTitleName}
-                />
+            <ScrollView contentContainerStyle={styles.formWrapper}> {/* Usar contentContainerStyle para o padding */}
+                <View style={styles.form}>
+                    {/* Componente de input da imagem de capa */}
+                    <CoverImageInput imageUri={coverImageUri} onPress={handlePickImage} /> {/* ADICIONADO AQUI */}
 
-                <Text style={styles.label}>Capítulo Atual:</Text>
-                <View style={styles.chapterInputContainer}>
-                    <TouchableOpacity
-                        onPress={() => {
-                            const num = parseInt(currentChapter, 10);
-                            if (!isNaN(num)) {
-                                setCurrentChapter((num - 1).toString()); // Decrementa 1
-                            } else if (isNaN(num)) {
-                                setCurrentChapter('0'); // Se for NaN, define como 0
-                            }
-                        }}
-                        style={styles.chapterAdjustButton}
-                    >
-                        <Text style={styles.chapterAdjustButtonText}>-</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.label}>Nome do Título:</Text>
                     <TextInput
-                        style={[styles.input, styles.chapterInput]}
-                        placeholder="0" // Placeholder para inteiro
-                        keyboardType="decimal-pad"
-                        value={currentChapter}
-                        onChangeText={(text) => {
-                            // Permite dígitos e um único ponto ou vírgula (substituindo vírgula por ponto)
-                            const cleanedText = text.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                            // Garante que não haja múltiplos pontos decimais
-                            const parts = cleanedText.split('.');
-                            if (parts.length > 2) {
-                                setCurrentChapter(`${parts[0]}.${parts.slice(1).join('')}`);
-                            } else {
-                                setCurrentChapter(cleanedText);
-                            }
-                        }}
-                        onBlur={() => {
-                            const num = parseFloat(currentChapter); // Usa parseFloat
-                            if (isNaN(num)) {
-                                setCurrentChapter('0'); // Se inválido, define como 0
-                            } else {
-                                setCurrentChapter(num.toString()); // Garante que seja um número em string
-                            }
-                        }}
+                        style={styles.input}
+                        placeholder="Ex: O Pequeno Príncipe"
+                        value={titleName}
+                        onChangeText={setTitleName}
                     />
-                    <TouchableOpacity
-                        onPress={() => {
-                            const num = parseInt(currentChapter);
-                            if (!isNaN(num)) {
-                                setCurrentChapter((num + 1).toString()); // Incrementa 1
-                            } else {
-                                setCurrentChapter('1'); // Se for NaN, define como 1
-                            }
-                        }}
-                        style={styles.chapterAdjustButton}
-                    >
-                        <Text style={styles.chapterAdjustButtonText}>+</Text>
-                    </TouchableOpacity>
-                </View>
 
-                <Text style={styles.label}>URL do Site (Opcional):</Text>
-                <View style={styles.siteUrlInputContainer}>
-                    <TextInput
-                        style={[styles.input, styles.siteUrlInput]}
-                        placeholder="Ex: https://mangadex.org/title/..."
-                        value={siteUrl}
-                        onChangeText={setSiteUrl}
-                        keyboardType="url"
-                        autoCapitalize="none"
-                    />
-                    {siteUrl ? ( // Mostra o ícone de lixeira apenas se houver um URL
-                        <TouchableOpacity onPress={handleClearSiteUrl} style={styles.clearSiteUrlButton}>
-                            <AntDesign name="delete" size={24} color="red" />
-                        </TouchableOpacity>
-                    ) : null}
-                </View>
-                <Text style={styles.label}>Dia de Lançamento (Opcional):</Text>
-                <View style={styles.weekDayContainer}>
-                    {weekDays.map((day, index) => (
+                    <Text style={styles.label}>Capítulo Atual:</Text>
+                    <View style={styles.chapterInputContainer}>
                         <TouchableOpacity
-                            key={index}
-                            style={[
-                                styles.dayButton,
-                                releaseDay === index && styles.selectedDayButton // Estilo condicional
-                            ]}
-                            onPress={() => setReleaseDay(releaseDay === index ? null : index)} // Permite selecionar e deselecionar
+                            onPress={() => {
+                                const num = parseInt(currentChapter, 10);
+                                if (!isNaN(num)) {
+                                    setCurrentChapter((num - 1).toString()); // Decrementa 1
+                                } else if (isNaN(num)) {
+                                    setCurrentChapter('0'); // Se for NaN, define como 0
+                                }
+                            }}
+                            style={styles.chapterAdjustButton}
                         >
-                            <Text style={[styles.dayButtonText, releaseDay === index && styles.selectedDayButtonText]}>
-                                {day}
-                            </Text>
+                            <Text style={styles.chapterAdjustButtonText}>-</Text>
                         </TouchableOpacity>
-                    ))}
+                        <TextInput
+                            style={[styles.input, styles.chapterInput]}
+                            placeholder="0" // Placeholder para inteiro
+                            keyboardType="decimal-pad"
+                            value={currentChapter}
+                            onChangeText={(text) => {
+                                // Permite dígitos e um único ponto ou vírgula (substituindo vírgula por ponto)
+                                const cleanedText = text.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                                // Garante que não haja múltiplos pontos decimais
+                                const parts = cleanedText.split('.');
+                                if (parts.length > 2) {
+                                    setCurrentChapter(`${parts[0]}.${parts.slice(1).join('')}`);
+                                } else {
+                                    setCurrentChapter(cleanedText);
+                                }
+                            }}
+                            onBlur={() => {
+                                const num = parseFloat(currentChapter); // Usa parseFloat
+                                if (isNaN(num)) {
+                                    setCurrentChapter('0'); // Se inválido, define como 0
+                                } else {
+                                    setCurrentChapter(num.toString()); // Garante que seja um número em string
+                                }
+                            }}
+                        />
+                        <TouchableOpacity
+                            onPress={() => {
+                                const num = parseInt(currentChapter);
+                                if (!isNaN(num)) {
+                                    setCurrentChapter((num + 1).toString()); // Incrementa 1
+                                } else {
+                                    setCurrentChapter('1'); // Se for NaN, define como 1
+                                }
+                            }}
+                            style={styles.chapterAdjustButton}
+                        >
+                            <Text style={styles.chapterAdjustButtonText}>+</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <Text style={styles.label}>URL do Site (Opcional):</Text>
+                    <View style={styles.siteUrlInputContainer}>
+                        <TextInput
+                            style={[styles.input, styles.siteUrlInput]}
+                            placeholder="Ex: https://mangadex.org/title/..."
+                            value={siteUrl}
+                            onChangeText={setSiteUrl}
+                            keyboardType="url"
+                            autoCapitalize="none"
+                        />
+                        {siteUrl ? ( // Mostra o ícone de lixeira apenas se houver um URL
+                            <TouchableOpacity onPress={handleClearSiteUrl} style={styles.clearSiteUrlButton}>
+                                <AntDesign name="delete" size={24} color="red" />
+                            </TouchableOpacity>
+                        ) : null}
+                    </View>
+                    <Text style={styles.label}>Dia de Lançamento (Opcional):</Text>
+                    <View style={styles.weekDayContainer}>
+                        {weekDays.map((day, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                style={[
+                                    styles.dayButton,
+                                    releaseDay === index && styles.selectedDayButton // Estilo condicional
+                                ]}
+                                onPress={() => setReleaseDay(releaseDay === index ? null : index)} // Permite selecionar e deselecionar
+                            >
+                                <Text style={[styles.dayButtonText, releaseDay === index && styles.selectedDayButtonText]}>
+                                    {day}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                    <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                        <Text style={styles.saveButtonText}>{isEditing ? 'Salvar' : 'Adicionar'}</Text>
+                    </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                    <Text style={styles.saveButtonText}>{isEditing ? 'Salvar' : 'Adicionar'}</Text>
-                </TouchableOpacity>
-            </View>
+            </ScrollView>
         </KeyboardAvoidingView>
     );
 };
@@ -262,12 +285,14 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
     StyleSheet.create({
         container: {
             flex: 1,
-            padding: 20,
             backgroundColor: themeColors.background,
+        },
+        formWrapper: { // Estilo para o contentContainerStyle do ScrollView
+            padding: 20,
         },
         form: {
             backgroundColor: themeColors.card,
-            padding: 20,
+            padding: 20, // Padding do card interno
             borderRadius: 10,
             ...(theme === 'light'
                 ? {
