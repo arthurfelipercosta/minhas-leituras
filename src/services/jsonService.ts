@@ -2,9 +2,11 @@
 
 // import de pacotes
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Toast from 'react-native-toast-message';
+import { v4 as uuidv4 } from 'uuid';
+import 'react-native-get-random-values';
 
 // import de arquivos
 import { Title } from '@/types';
@@ -29,18 +31,75 @@ export const importTitlesFromTXTFile = async (): Promise<boolean> => {
             const response = await fetch(uri);
             const fileContent = await response.text();
 
-            const importedTitles: Title[] = JSON.parse(fileContent);
+            // let importedTitles: Title[] = JSON.parse(fileContent);
 
-            if (!Array.isArray(importedTitles) || importedTitles.some(t => !t.id || !t.name || typeof t.currentChapter !== 'number')) {
-                throw new Error('Formato de arquivo JSON inválido para importação de títulos. Verifique se o arquivo contém um array de títulos com as propriedades id, name e currentChapter.');
+            let parsedTitles: Title[];
+            try {
+                parsedTitles = JSON.parse(fileContent);
+            } catch (error) {
+                throw new Error('O conteúdo do arquivo não é um JSON válido');
             }
 
-            await saveTitles(importedTitles);
+            if (!Array.isArray(parsedTitles)) {
+                throw new Error('O arquivo deve conter um array de títulos.');
+            }
+
+            const validImportedTitles: Title[] = [];
+            const invalidTitlesMessages: string[] = [];
+
+            // Pré-processa os títulos importados: gera IDs e valida o básico
+            parsedTitles.forEach(t => {
+                if (!t.name || typeof t.currentChapter !== 'number') {
+                    invalidTitlesMessages.push(`Título '${t.name || 'Desconhecido'}' está malformado (falta nome ou capítulo atual válido).`);
+                    return; // Ignora este título inválido
+                }
+
+                if (!t.id) { t.id = uuidv4(); } // Gera um ID se estiver faltando
+
+                validImportedTitles.push(t);
+            });
+
+            if (validImportedTitles.length === 0) {
+                // Se nenhum título válido foi encontrado, e talvez só havia inválidos
+                throw new Error('Nenhum título válido encontrado para importação.');
+            }
+            const existingTitles = await getTitles();
+            const mergedTitles: Title[] = [...existingTitles]; // Começa com todos os títulos existentes
+            const existingNamesLower = new Set<string>(existingTitles.map(t => t.name.toLowerCase()));
+
+            let titlesAdded = 0;
+            let titlesSkipped = 0;
+
+            // Combina os títulos: adiciona novos, ignora duplicatas
+            validImportedTitles.forEach(importedTitle => {
+                const normalizedImportedName = importedTitle.name.toLowerCase();
+
+                if (existingNamesLower.has(normalizedImportedName)) {
+                    titlesSkipped++;
+                    // Não adiciona novamente, nem atualiza (conforme a interpretação de "totalmente igual")
+                    return;
+                }
+
+                mergedTitles.push(importedTitle);
+                existingNamesLower.add(normalizedImportedName); // Adiciona para evitar futuras duplicatas nesta mesma importação
+                titlesAdded++;
+            });
+
+            await saveTitles(mergedTitles); // Salva a lista combinada de títulos
+
+            let toastText2 = `Importação concluída. ${titlesAdded} novos títulos adicionados.`;
+            if (titlesSkipped > 0) {
+                toastText2 += ` ${titlesSkipped} títulos já existentes foram ignorados.`;
+            }
+            if (invalidTitlesMessages.length > 0) {
+                toastText2 += ` ${invalidTitlesMessages.length} títulos malformados foram ignorados.`;
+            }
 
             Toast.show({
                 type: 'success',
                 text1: 'Backup Importado!',
-                text2: 'Os títulos foram importados com sucesso.',
+                text2: toastText2,
+                visibilityTime: 5000, // Tempo para ler todas as mensagens
             });
             return true;
         }
@@ -52,12 +111,12 @@ export const importTitlesFromTXTFile = async (): Promise<boolean> => {
             });
             return false;
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Erro ao importar backup:', error);
         Toast.show({
             type: 'error',
             text1: 'Erro ao Importar',
-            text2: error.message || 'Não foi possível importar o backup. Certifique-se de que é um arquivo válido.',
+            text2: error.message || 'Não foi possível importar o backup. Tente novamente.',
         });
         return false;
     }
@@ -75,58 +134,30 @@ export const exportTitlesToTXTFile = async (): Promise<boolean> => {
         const jsonString = JSON.stringify(allTitles, null, 2); // Formata para leitura fácil
         const fileName = `ml-backup-${new Date().toISOString().split('T')[0]}.txt`;
 
-        const blob = new Blob([jsonString], { type: 'text/plain' });
-        const reader = new FileReader();
+        const file = new File(Paths.cache, fileName);
+        await file.write(jsonString, { encoding: 'utf8' })
 
-        return new Promise((resolve) => {
-            reader.onload = async () => {
-                try {
-                    const base64 = (reader.result as string).split(',')[1];
-                    const dataUri = `data:text/plain;base64,${base64}`;
+        if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(file.uri, {
+                mimeType: 'text/plain',
+                dialogTitle: 'Salvar Backup',
+                UTI: 'public.plain-text',
+            });
 
-                    if (await Sharing.isAvailableAsync()) {
-                        await Sharing.shareAsync(dataUri, {
-                            mimeType: 'text/plain',
-                            dialogTitle: 'Salvar Backup',
-                            UTI: 'public.txt',
-                        });
-
-                        Toast.show({
-                            type: 'success',
-                            text1: 'Backup Exportado!',
-                            text2: 'Selecione onde salvar seu arquivo TXT.',
-                        });
-                        resolve(true);
-                    } else {
-                        Toast.show({
-                            type: 'error',
-                            text1: 'Erro ao Exportar',
-                            text2: 'Compartilhamento de arquivo não disponível neste dispositivo.',
-                        });
-                        resolve(false);
-                    }
-                } catch (error) {
-                    console.error('Erro ao exportar backup:', error);
-                    Toast.show({
-                        type: 'error',
-                        text1: 'Erro ao Exportar',
-                        text2: 'Não foi possível exportar o backup. Tente novamente.',
-                    });
-                    resolve(false);
-                }
-            };
-
-            reader.onerror = () => {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Erro ao Exportar',
-                    text2: 'Não foi possível processar o arquivo.',
-                });
-                resolve(false);
-            };
-
-            reader.readAsDataURL(blob);
-        });
+            Toast.show({
+                type: 'success',
+                text1: 'Backup Exportado!',
+                text2: 'Selecione onde salvar seu arquivo TXT.',
+            });
+            return true;
+        } else {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro ao Exportar',
+                text2: 'Compartilhamento de arquivo não disponível neste dispositivo.',
+            });
+            return false;
+        }
     } catch (error: any) {
         console.error('Erro ao exportar backup:', error);
         Toast.show({

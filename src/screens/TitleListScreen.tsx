@@ -2,15 +2,12 @@
 
 // import de pacotes
 import React, { useState, useCallback, useMemo, useLayoutEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native'; // Importar Platform
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AntDesign, FontAwesome6 } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import * as Clipboard from 'expo-clipboard';
-import * as Sharing from 'expo-sharing';
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
 
 // import de arquivos
 import { RootStackParamList } from 'App';
@@ -20,11 +17,9 @@ import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
+import { importTitlesFromTXTFile, exportTitlesToTXTFile } from '@/services/jsonService';
 
 type TitleListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TitleList'>;
-
-// Instalar @expo/vector-icons: npx expo install @expo/vector-icons
-// Instalar react-native-toast-message com npx expo install, npm install ou yarn add
 
 const TitleListScreen: React.FC = () => {
     const { theme } = useTheme();
@@ -39,6 +34,8 @@ const TitleListScreen: React.FC = () => {
 
     const [titleToDeleteId, setTitleToDeleteId] = useState<string | null>(null);
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+    const [isExportModalVisible, setIsExportModalVisible] = useState(false);
+    const [isImportModalVisible, setIsImportModalVisible] = useState(false);
 
     const loadTitles = async () => {
         setLoading(true);
@@ -47,109 +44,64 @@ const TitleListScreen: React.FC = () => {
         setLoading(false);
     };
 
+    const confirmExport = useCallback(async () => {
+        const sucess = await exportTitlesToTXTFile();
+        if (sucess) {
+            await loadTitles();
+            Toast.show({
+                type: 'success',
+                text1: 'Exportação concluída!',
+                text2: 'Arquivo exportado com sucesso.'
+            });
+        }
+        setIsExportModalVisible(false);
+    }, []);
+
+    const cancelExport = useCallback(() => {
+        setIsExportModalVisible(false);
+    }, []);
+    const handleExportFile = useCallback(() => {
+        setIsExportModalVisible(true);
+    }, []);
+
+    const confirmImport = useCallback(async () => {
+        const sucess = await importTitlesFromTXTFile();
+        if (sucess) {
+            await loadTitles();
+            Toast.show({
+                type: 'success',
+                text1: 'Importação concluída!',
+                text2: 'Título(s) importado(s) com sucesso.'
+            });
+        }
+        setIsImportModalVisible(false);
+    }, []);
+
+    const cancelImport = useCallback(() => {
+        setIsImportModalVisible(false);
+    }, []);
+
+    const handleImportFile = useCallback(() => {
+        setIsImportModalVisible(true);
+    }, []);
+
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     {/* Botão de Exportar */}
-                    <TouchableOpacity onPress={() => console.log('Botão de Exportar JSON pressionado!')} style={{ marginRight: 15 }}>
+                    <TouchableOpacity onPress={handleExportFile} style={{ marginRight: 15 }}>
                         <FontAwesome6 name="upload" size={24} color={themeColors.icon} />
                     </TouchableOpacity>
                     {/* Botão de Importar */}
-                    <TouchableOpacity onPress={() => console.log('Botão de Importar JSON pressionado!')} style={{ marginRight: 15 }}>
+                    <TouchableOpacity onPress={handleImportFile} style={{ marginRight: 15 }}>
                         <FontAwesome6 name="download" size={24} color={themeColors.icon} />
                     </TouchableOpacity>
                     <ThemeToggleButton />
                 </View>
             ),
         });
-    }, [navigation, themeColors]);
-
-    // const confirmExport = useCallback(async () => {
-    //     try {
-    //         const allTitles = await getTitles();
-    //         const jsonString = JSON.stringify(allTitles, null, 2); // Formata para leitura fácil
-    //         const fileName = `minhas-leituras-backup-${new Date().toISOString().split('T')[0]}.json`;
-    //         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-
-    //         await FileSystem.writeAsStringAsync(fileUri, jsonString);
-
-    //         // Removida a lógica específica para 'web'
-    //         if (await Sharing.isAvailableAsync()) {
-    //             await Sharing.shareAsync(fileUri, { mimeType: 'application/json', UTI: 'public.json' });
-    //             Toast.show({
-    //                 type: 'success',
-    //                 text1: 'Backup Exportado!',
-    //                 text2: 'Selecione onde salvar seu arquivo JSON.',
-    //             });
-    //         } else {
-    //             Toast.show({
-    //                 type: 'error',
-    //                 text1: 'Erro ao Exportar',
-    //                 text2: 'Compartilhamento de arquivo não disponível neste dispositivo.',
-    //             });
-    //         }
-    //     } catch (error) {
-    //         console.error('Erro ao exportar backup:', error);
-    //         Toast.show({
-    //             type: 'error',
-    //             text1: 'Erro ao Exportar',
-    //             text2: 'Não foi possível exportar o backup. Tente novamente.',
-    //         });
-    //     } finally {
-    //         setIsExportModalVisible(false); // Fecha o modal após a ação
-    //     }
-    // }, []);
-
-    // const handleExportFile = useCallback(() => {
-    //     setIsExportModalVisible(true);
-    // }, []);
-
-    // const cancelExport = useCallback(() => {
-    //     setIsExportModalVisible(false);
-    // }, []);
-
-    // const handleImportFile = useCallback(async () => {
-    //     try {
-    //         const result = await DocumentPicker.getDocumentAsync({
-    //             type: 'application/json', // Aceita apenas arquivos JSON
-    //             copyToCacheDirectory: true,
-    //         });
-
-    //         if (result.canceled === false && result.assets && result.assets.length > 0) {
-    //             const uri = result.assets[0].uri;
-    //             const fileContent = await FileSystem.readAsStringAsync(uri);
-
-    //             const importedTitles: Title[] = JSON.parse(fileContent);
-
-    //             if (!Array.isArray(importedTitles) || importedTitles.some(t => !t.id || !t.name || typeof t.currentChapter !== 'number')) {
-    //                 throw new Error('Formato de arquivo JSON inválido para importação de títulos. Verifique se o arquivo contém um array de títulos com as propriedades id, name e currentChapter.');
-    //             }
-
-    //             await saveTitles(importedTitles);
-    //             await loadTitles();
-
-    //             Toast.show({
-    //                 type: 'success',
-    //                 text1: 'Backup Importado!',
-    //                 text2: 'Os títulos foram importados com sucesso.',
-    //             });
-    //         } else {
-    //             Toast.show({
-    //                 type: 'info',
-    //                 text1: 'Importação Cancelada',
-    //                 text2: 'Nenhum arquivo JSON selecionado.',
-    //             });
-    //         }
-    //     } catch (error: any) {
-    //         console.error('Erro ao importar backup:', error);
-    //         Toast.show({
-    //             type: 'error',
-    //             text1: 'Erro ao Importar',
-    //             text2: error.message || 'Não foi possível importar o backup. Certifique-se de que é um arquivo JSON válido.',
-    //         });
-    //     }
-    // }, [loadTitles]);
+    }, [navigation, themeColors, handleExportFile, handleImportFile]);
 
     // Função auxiliar para formatar o capítulo para exibição (sem .00 se for inteiro)
     const formatChapterForDisplay = (chapter: number): string => {
@@ -251,12 +203,17 @@ const TitleListScreen: React.FC = () => {
         return (
             <View style={[styles.titleItem, isReleaseDayToday && styles.releaseDayHighlight]}>
                 <TouchableOpacity
+                    style={styles.titleTextContainer}
                     onPress={() => {
                         item.siteUrl ? handleCopySiteUrl(item.siteUrl) : navigation.navigate('TitleDetail', { id: item.id });
                     }}
                     onLongPress={() => navigation.navigate('TitleDetail', { id: item.id }) // Navegar para a edição com um long press
                     }>
-                    <Text style={styles.titleName}>{item.name}</Text>
+                    <Text
+                        style={styles.titleName}
+                        numberOfLines={1}
+                        ellipsizeMode='tail'
+                    >{item.name}</Text>
                 </TouchableOpacity>
                 <View style={styles.chapterControl}>
                     <TouchableOpacity
@@ -333,6 +290,26 @@ const TitleListScreen: React.FC = () => {
                 confirmButtonText="Deletar"
                 cancelButtonText="Cancelar"
             />
+
+            <ConfirmationModal
+                isVisible={isExportModalVisible}
+                title="Confirmar Exportação"
+                message="Deseja exportar todos os títulos para um arquivo TXT?"
+                onConfirm={confirmExport}
+                onCancel={cancelExport}
+                confirmButtonText="Exportar"
+                cancelButtonText="Cancelar"
+            />
+
+            <ConfirmationModal
+                isVisible={isImportModalVisible}
+                title="Confirmar Importação"
+                message="Deseja importar todos os títulos? Os existentes não serão deletados."
+                onConfirm={confirmImport}
+                onCancel={cancelImport}
+                confirmButtonText="Importar"
+                cancelButtonText="Cancelar"
+            />
         </View>
     );
 };
@@ -379,11 +356,13 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
             fontWeight: 'bold',
             color: themeColors.text,
         },
+        titleTextContainer: {
+            flex: 1,
+            marginRight: 10,
+        },
         chapterControl: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginLeft: 10,
-            marginRight: 10,
         },
         chapterButton: {
             padding: 5,
