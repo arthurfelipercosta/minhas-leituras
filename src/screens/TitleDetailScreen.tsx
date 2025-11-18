@@ -7,6 +7,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AntDesign } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import * as ImagePicker from 'expo-image-picker';
 
 //import de arquivos
 import { RootStackParamList } from 'App';
@@ -14,6 +15,7 @@ import { addTitle, updateTitle, getTitles } from '@/services/storageServices';
 import { Title } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
+import CoverImageInput from '@/components/CoverImageInput';
 
 type TitleDetailScreenProps = NativeStackScreenProps<RootStackParamList, 'TitleDetail'>;
 
@@ -25,12 +27,15 @@ const TitleDetailScreen: React.FC = () => {
     const navigation = useNavigation<TitleDetailScreenProps['navigation']>();
     const route = useRoute<TitleDetailScreenProps['route']>();
     const { id } = route.params || {}; // Pega o ID se estiver editando
+    const [title, setTitle] = useState<Title | null>(null);
 
     const [titleName, setTitleName] = useState('');
     const [currentChapter, setCurrentChapter] = useState('0');
     const [siteUrl, setSiteUrl] = useState('');
     const [releaseDay, setReleaseDay] = useState<number | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+
+    const [coverImageUri, setCoverImageUri] = useState<string | null>(null);
 
     const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']; // Dias da semana para a UI
 
@@ -47,17 +52,33 @@ const TitleDetailScreen: React.FC = () => {
                     setCurrentChapter(titleToEdit.currentChapter.toString());
                     setSiteUrl(titleToEdit.siteUrl || '') // Carrega o siteUrl para edição
                     setReleaseDay(titleToEdit.releaseDay ?? null) // Carrega o dia salvo ou null
+                    setCoverImageUri(titleToEdit.coverUri || null); // Carregar a imagem de cover
                 }
             };
             loadTitleToEdit();
         } else {
             setIsEditing(false);
+            setTitle(null);
             setTitleName('');
             setCurrentChapter('0');
             setSiteUrl('');
             setReleaseDay(null);
+            setCoverImageUri(null);
         }
     }, [id]);
+
+    if (title) { setCoverImageUri(title.coverUri || null); }
+
+    const handlePickImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [2, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled) { setCoverImageUri(result.assets[0].uri) };
+    }
 
     const handleClearSiteUrl = () => {
         setSiteUrl('');
@@ -67,6 +88,7 @@ const TitleDetailScreen: React.FC = () => {
             text2: 'O campo do link do site foi limpo.'
         });
     }
+
 
     const handleSave = async () => {
         if (!titleName.trim()) {
@@ -97,15 +119,19 @@ const TitleDetailScreen: React.FC = () => {
             return;
         }
 
+        const titleData: Title = {
+            id: isEditing && title?.id ? title.id : '', // O ID será preenchido por addTitle se for novo, ou pelo 'id' da rota
+            name: titleName,
+            currentChapter: chapterNumber,
+            siteUrl: siteUrl.trim() || undefined,
+            releaseDay: releaseDay ?? undefined,
+            coverUri: coverImageUri || undefined, // Incluímos a URI da capa
+            thumbnailUri: coverImageUri || undefined, // Por enquanto, usa a mesma da capa
+        };
+
         if (isEditing && id) {
-            const updatedTitle: Title = {
-                id: id,
-                name: titleName,
-                currentChapter: chapterNumber,
-                siteUrl: siteUrl.trim() || undefined,
-                releaseDay: releaseDay ?? undefined,
-            };
-            await updateTitle(updatedTitle);
+            titleData.id = id; // Garante que o ID do objeto seja o da rota para atualização
+            await updateTitle(titleData); // Passamos o objeto titleData completo
             Toast.show({
                 type: 'success',
                 text1: 'Sucesso',

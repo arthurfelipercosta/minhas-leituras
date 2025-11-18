@@ -2,7 +2,7 @@
 
 // import de pacotes
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import uuid from 'react-native-uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 // import de arquivos
 import { Title } from "@/types";
@@ -28,23 +28,25 @@ export const saveTitles = async (titles: Title[]) => {
     }
 };
 
-export const addTitle = async (name: string, initialChapter: number = 0, siteUrl?: string, releaseDay?: number): Promise<Title> => {
-    const newTitle: Title = {
-        id: uuid.v4().toString(), // Gera um ID único
-        name,
-        currentChapter: initialChapter,
-        ...(siteUrl ? { siteUrl } : {}),
-        releaseDay,
-    };
+export const addTitle = async (newTitleData: Omit<Title, 'id'>): Promise<void> => {
     const existingTitles = await getTitles();
-    await saveTitles([...existingTitles, newTitle]);
-    return newTitle;
+    const newTitle: Title = {
+        id: uuidv4(), // Sempre gera um novo ID para um novo título
+        name: newTitleData.name,
+        currentChapter: newTitleData.currentChapter,
+        siteUrl: newTitleData.siteUrl,
+        releaseDay: newTitleData.releaseDay,
+        coverUri: newTitleData.coverUri,     // Adicionado
+        thumbnailUri: newTitleData.thumbnailUri, // Adicionado
+    };
+    const updatedTitles = [...existingTitles, newTitle];
+    await saveTitles(updatedTitles);
 };
 
-export const updateTitle = async (updatedTitle: Title) => {
+export const updateTitle = async (updatedTitle: Title): Promise<void> => {
     const existingTitles = await getTitles();
-    const updatedTitles = existingTitles.map((title) =>
-        title.id === updatedTitle.id ? updatedTitle : title
+    const updatedTitles = existingTitles.map((t) =>
+        t.id === updatedTitle.id ? updatedTitle : t
     );
     await saveTitles(updatedTitles);
 };
