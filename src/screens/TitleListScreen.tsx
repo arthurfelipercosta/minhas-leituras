@@ -90,6 +90,10 @@ const TitleListScreen: React.FC = () => {
         navigation.setOptions({
             headerRight: () => (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {/* Botão de Configurações */}
+                    <TouchableOpacity onPress={() => navigation.navigate('Notification')} style={{ marginRight: 15 }}>
+                        <FontAwesome6 name="clock" size={24} color={themeColors.icon} />
+                    </TouchableOpacity>
                     {/* Botão de Exportar */}
                     <TouchableOpacity onPress={handleExportFile} style={{ marginRight: 15 }}>
                         <FontAwesome6 name="upload" size={24} color={themeColors.icon} />

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Minhas Leituras",
     "slug": "minhas-leituras",
-    "version": "1.0.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/dicionario.png",
     "userInterfaceStyle": "light",
@@ -21,13 +21,19 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.arthurfrc.minhasleituras"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0816fbd0-47e3-423d-b0bf-f6f30d9e118f"
+      }
+    }
   }
 }

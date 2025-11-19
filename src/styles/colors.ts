@@ -6,6 +6,7 @@ export const colors = {
         card: '#F5F5F5',
         border: '#E0E0E0',
         icon: '#000000',
+        textSecondary: '#666666',
     },
     dark: {
         background: '#121212',
@@ -14,5 +15,6 @@ export const colors = {
         card: '#1E1E1E',
         border: '#272727',
         icon: '#FFFFFF',
+        textSecondary: '#AAAAAA',
     },
 };
