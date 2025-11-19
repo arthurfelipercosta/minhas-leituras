@@ -171,10 +171,9 @@ const TitleDetailScreen: React.FC = () => {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <ScrollView contentContainerStyle={styles.formWrapper}> {/* Usar contentContainerStyle para o padding */}
+            <ScrollView contentContainerStyle={styles.formWrapper} scrollEnabled={false}>
                 <View style={styles.form}>
-                    {/* Componente de input da imagem de capa */}
-                    <CoverImageInput imageUri={coverImageUri} onPress={handlePickImage} /> {/* ADICIONADO AQUI */}
+                    <CoverImageInput imageUri={coverImageUri} onPress={handlePickImage} />
 
                     <Text style={styles.label}>Nome do Título:</Text>
                     <TextInput
@@ -238,7 +237,6 @@ const TitleDetailScreen: React.FC = () => {
                             <Text style={styles.chapterAdjustButtonText}>+</Text>
                         </TouchableOpacity>
                     </View>
-
                     <Text style={styles.label}>URL do Site (Opcional):</Text>
                     <View style={styles.siteUrlInputContainer}>
                         <TextInput

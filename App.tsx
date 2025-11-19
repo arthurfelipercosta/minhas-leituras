@@ -40,7 +40,7 @@ function AppNavigator() {
 
   return (
     <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator initialRouteName='TitleList'>
+      <Stack.Navigator initialRouteName='TitleList' id={undefined}>
         <Stack.Screen
           name='TitleList'
           component={TitleListScreen}
