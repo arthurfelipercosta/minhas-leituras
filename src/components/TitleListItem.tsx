@@ -1,7 +1,7 @@
 // src/components/TitleListItem.tsx
 
 // import de pacotes
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 
@@ -23,6 +23,12 @@ const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapter
     const themeColors = colors[theme];
     const styles = createStyles(theme, themeColors);
 
+    const getTodayAtMidnight = () => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return today;
+    }
+
     const formatChapterForDisplay = (chapter: number | undefined | null): string => {
         if (chapter === undefined || chapter === null) {
             return '0';
@@ -31,15 +37,37 @@ const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapter
         return result;
     };
 
-    const currentDay = new Date().getDay();
-    const isReleaseDayToday = item.releaseDay !== undefined && item.releaseDay === currentDay;
+    const getBorderColor = () => {
+        const today = getTodayAtMidnight();
+        const currentDay = today.getDay();
+        const isReleaseDay = (item.releaseDay ?? -1) === currentDay;
+
+        // Atrasado (vermelho)
+        if (isReleaseDay && item.lastUpdate) {
+            const lastUpdateDate = new Date(item.lastUpdate);
+            lastUpdateDate.setHours(0, 0, 0, 0);
+            if (lastUpdateDate.getTime() < today.getTime()) {
+                return themeColors.danger;
+            }
+            // Dia de lançamento (amarelo)
+            return themeColors.warning;
+        }
+        return item.lastChapter !== undefined && item.currentChapter < item.lastChapter ? themeColors.ongoing : undefined;
+    }
+
+    const borderColor = getBorderColor();
+
+    const formattedChapter = useMemo(
+        () => formatChapterForDisplay(item.currentChapter),
+        [item.currentChapter]
+    );
 
     return (
-        <View style={[styles.titleItem, isReleaseDayToday && styles.releaseDayHighlight]}>
+        <View style={[styles.titleItem, borderColor && { borderColor, borderWidth: 2 }]}>
             {item.thumbnailUri ? (
                 <Image source={{ uri: item.thumbnailUri }} style={styles.thumbnail} />
             ) : (
-                <View style={styles.thumbnailPlaceholder} /> 
+                <View style={styles.thumbnailPlaceholder} />
             )}
             <TouchableOpacity
                 onPress={() => item.siteUrl ? onCopyUrl(item.siteUrl) : onNavigate(item.id)}
@@ -57,7 +85,7 @@ const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapter
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => onNavigate(item.id)}>
                     <Text style={styles.chapterText}>
-                        {formatChapterForDisplay(item.currentChapter)}
+                        {formattedChapter}
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => onChapterChange(item, 1)} style={styles.chapterButton}>
@@ -123,10 +151,6 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
         deleteButton: {
             padding: 5,
             marginLeft: 10,
-        },
-        releaseDayHighlight: {
-            borderColor: 'green',
-            borderWidth: 2,
         },
         thumbnail: {
             width: 40,
