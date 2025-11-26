@@ -7,6 +7,8 @@ export const colors = {
         border: '#E0E0E0',
         icon: '#000000',
         textSecondary: '#666666',
+        warning: '#FFA000',
+        danger: '##D32F2F',
     },
     dark: {
         background: '#121212',
@@ -16,5 +18,7 @@ export const colors = {
         border: '#272727',
         icon: '#FFFFFF',
         textSecondary: '#AAAAAA',
+        warning: '#FFC107',
+        danger: '#EF5350',
     },
 };
