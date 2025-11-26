@@ -2,10 +2,10 @@
 
 // import de pacotes
 import React, { useState, useCallback, useMemo, useLayoutEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Modal } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AntDesign, FontAwesome6 } from '@expo/vector-icons';
+import { AntDesign, FontAwesome6, Entypo } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import * as Clipboard from 'expo-clipboard';
 
@@ -29,9 +29,10 @@ const TitleListScreen: React.FC = () => {
     const navigation = useNavigation<TitleListScreenNavigationProp>();
     const [titles, setTitles] = useState<Title[]>([]);
     const [loading, setLoading] = useState(true);
+    const [menu, setMenu] = useState(false);
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortOrder, setSortOrder] = useState<'alpha-asc' | 'alpha-desc' | 'release-day'>('alpha-asc');
+    const [sortOrder, setSortOrder] = useState<'alpha-asc' | 'alpha-desc' | 'release-day' | 'today-release'>('alpha-asc');
 
     const [titleToDeleteId, setTitleToDeleteId] = useState<string | null>(null);
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
@@ -88,25 +89,17 @@ const TitleListScreen: React.FC = () => {
 
     useLayoutEffect(() => {
         navigation.setOptions({
+            title: ` Minhas leituras (${titles.length})`,
             headerRight: () => (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    {/* Botão de Configurações */}
-                    <TouchableOpacity onPress={() => navigation.navigate('Notification')} style={{ marginRight: 15 }}>
-                        <FontAwesome6 name="clock" size={24} color={themeColors.icon} />
-                    </TouchableOpacity>
-                    {/* Botão de Exportar */}
-                    <TouchableOpacity onPress={handleExportFile} style={{ marginRight: 15 }}>
-                        <FontAwesome6 name="upload" size={24} color={themeColors.icon} />
-                    </TouchableOpacity>
-                    {/* Botão de Importar */}
-                    <TouchableOpacity onPress={handleImportFile} style={{ marginRight: 15 }}>
-                        <FontAwesome6 name="download" size={24} color={themeColors.icon} />
-                    </TouchableOpacity>
                     <ThemeToggleButton />
+                    <TouchableOpacity onPress={() => setMenu(true)} style={{ marginLeft: 15 }}>
+                        <Entypo name="dots-three-vertical" size={24} color={themeColors.icon} />
+                    </TouchableOpacity>
                 </View>
             ),
         });
-    }, [navigation, themeColors, handleExportFile, handleImportFile]);
+    }, [navigation, themeColors, titles.length]);
 
     // Função auxiliar para formatar o capítulo para exibição (sem .00 se for inteiro)
     const formatChapterForDisplay = (chapter: number): string => {
@@ -134,6 +127,8 @@ const TitleListScreen: React.FC = () => {
             setSortOrder('alpha-desc');
         } else if (sortOrder === 'alpha-desc') {
             setSortOrder('release-day');
+        } else if (sortOrder === 'release-day') {
+            setSortOrder('today-release');
         } else { setSortOrder('alpha-asc'); }
     }
 
@@ -147,6 +142,9 @@ const TitleListScreen: React.FC = () => {
                 return filteredTitles.sort((a, b) => b.name.localeCompare(a.name));
             case 'release-day':
                 return filteredTitles.sort((a, b) => (a.releaseDay ?? 8) - (b.releaseDay ?? 8));
+            case 'today-release':
+                const currentDay = new Date().getDay();
+                return filteredTitles.filter(title => title.releaseDay === currentDay);
             default:
                 return filteredTitles;
         }
@@ -155,7 +153,8 @@ const TitleListScreen: React.FC = () => {
     const getSortButtonText = () => {
         if (sortOrder === 'alpha-asc') return 'A-Z';
         if (sortOrder === 'alpha-desc') return 'Z-A';
-        return 'DIA';
+        if (sortOrder === 'release-day') return 'DIA';
+        return 'HOJE';
     }
     // Função para confirmar a exclusão
     const confirmDelete = async () => {
@@ -255,6 +254,34 @@ const TitleListScreen: React.FC = () => {
                 <AntDesign name="plus" size={24} color="white" />
             </TouchableOpacity>
 
+            <Modal
+                transparent
+                visible={menu}
+                onRequestClose={() => setMenu(false)}
+                animationType='fade'
+            >
+                <TouchableOpacity style={styles.modalOverlay} onPress={() => setMenu(false)}>
+                    <View style={styles.menuContainer}>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenu(false); navigation.navigate('Statistics'); }}>
+                            <Entypo name='area-graph' size={22} color={themeColors.text} />
+                            <Text style={styles.menuItemText}>Estatísticas</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenu(false); navigation.navigate('Notification'); }}>
+                            <FontAwesome6 name='clock' size={22} color={themeColors.text} />
+                            <Text style={styles.menuItemText}>Notificações</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenu(false); handleExportFile() }}>
+                            <FontAwesome6 name='upload' size={22} color={themeColors.text} />
+                            <Text style={styles.menuItemText}>Exportar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenu(false); handleImportFile(); }}>
+                            <FontAwesome6 name='download' size={22} color={themeColors.text} />
+                            <Text style={styles.menuItemText}>Importar</Text>
+                        </TouchableOpacity>
+                    </View >
+                </TouchableOpacity >
+            </Modal >
+
             <ConfirmationModal
                 isVisible={isDeleteModalVisible}
                 title="Confirmar Exclusão"
@@ -284,7 +311,7 @@ const TitleListScreen: React.FC = () => {
                 confirmButtonText="Importar"
                 cancelButtonText="Cancelar"
             />
-        </View>
+        </View >
     );
 };
 
@@ -347,6 +374,37 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
         sortButtonText: {
             color: 'white',
             fontWeight: 'bold',
+        },
+        modalOverlay: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'flex-start',
+            alignItems: 'flex-end',
+            paddingTop: 50,
+            paddingRight: 10,
+        },
+        menuContainer: {
+            alignItems: 'center',
+            backgroundColor: themeColors.card,
+            borderRadius: 8,
+            padding: 10,
+            width: 200,
+            elevation: 5,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+        },
+        menuItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: 12,
+        },
+        menuItemText: {
+            color: themeColors.text,
+            fontSize: 16,
+            marginLeft: 15,
+            width: 100
         },
     });
 

@@ -9,6 +9,10 @@ export const colors = {
         textSecondary: '#666666',
         warning: '#FFA000',
         danger: '##D32F2F',
+        ongoing: '#4CAF50',
+        switchTumb: '#F5F5F5',
+        switchInactive: '#CCCCCC',
+        switchActive: '#81C784',
     },
     dark: {
         background: '#121212',
@@ -20,5 +24,9 @@ export const colors = {
         textSecondary: '#AAAAAA',
         warning: '#FFC107',
         danger: '#EF5350',
+        ongoing: '#81C784',
+        switchTumb: '#BDBDBD',
+        switchInactive: '#424242',
+        switchActive: '#66BB6A',
     },
 };

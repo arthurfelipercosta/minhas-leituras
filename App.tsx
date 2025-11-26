@@ -12,6 +12,7 @@ import { colors } from '@/styles/colors';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import TitleListScreen from '@/screens/TitleListScreen';
 import TitleDetailScreen from '@/screens/TitleDetailScreen';
+import StatisticsScreen from '@/screens/StatisticsScreen';
 import NotificationSettingsScreen from '@/screens/NotificationSettingsScreen';
 
 
@@ -62,6 +63,14 @@ function AppNavigator() {
           component={NotificationSettingsScreen}
           options={{
             title: 'Configurações',
+            headerRight: () => <ThemeToggleButton />,
+          }}
+          />
+        <Stack.Screen
+          name='Statistics'        
+          component={StatisticsScreen}
+          options={{
+            title: 'Estatísticas',
             headerRight: () => <ThemeToggleButton />,
           }}
         />
