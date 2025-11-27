@@ -8,6 +8,39 @@ import { v4 as uuidv4 } from 'uuid';
 import { Title } from "@/types";
 
 const STORAGE_KEY = '@mL:titles';
+const SETTING_KEY = '@mL:settings';
+
+export type TapAction = 'edit' | 'copy_url' | 'open_url';
+
+export interface UserSettings {
+    shortTapAction: TapAction;
+    longPressAction: TapAction;
+}
+
+export const getSettings = async (): Promise<UserSettings> => {
+    try {
+        const settingsJson = await AsyncStorage.getItem(SETTING_KEY);
+        if (settingsJson) {
+            return JSON.parse(settingsJson);
+        }
+    } catch (e) {
+        console.error("Falha ao dar load nas configurações: ", e);
+    }
+
+    return {
+        shortTapAction: 'open_url',
+        longPressAction: 'edit',
+    }
+};
+
+export const saveSettings = async (settings: UserSettings) => {
+    try {
+        const settingsJson = JSON.stringify(settings);
+        await AsyncStorage.setItem(SETTING_KEY, settingsJson);
+    } catch (e) {
+        console.error("Falha ao salvar configurações: ", e);
+    }
+};
 
 export const getTitles = async (): Promise<Title[]> => {
     try {

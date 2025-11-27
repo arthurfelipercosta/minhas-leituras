@@ -13,13 +13,14 @@ import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import TitleListScreen from '@/screens/TitleListScreen';
 import TitleDetailScreen from '@/screens/TitleDetailScreen';
 import StatisticsScreen from '@/screens/StatisticsScreen';
-import NotificationSettingsScreen from '@/screens/NotificationSettingsScreen';
+import SettingsScreen from '@/screens/SettingsScreen';
 
 
 export type RootStackParamList = {
   TitleList: undefined;
   TitleDetail: { id?: string } | undefined;
-  Notification: undefined;
+  Settings: undefined;
+  Statistics: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -59,8 +60,8 @@ function AppNavigator() {
           }}
         />
         <Stack.Screen
-          name='Notification'
-          component={NotificationSettingsScreen}
+          name='Settings'
+          component={SettingsScreen}
           options={{
             title: 'Configurações',
             headerRight: () => <ThemeToggleButton />,

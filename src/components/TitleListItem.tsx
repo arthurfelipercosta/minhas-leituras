@@ -14,11 +14,12 @@ interface TitleListItemProps {
     item: Title;
     onDelete: (id: string) => void;
     onChapterChange: (item: Title, delta: number) => void;
+    onShortPress: () => void;
+    onLongPress: () => void;
     onNavigate: (id: string) => void;
-    onCopyUrl: (url: string | undefined) => void;
 }
 
-const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapterChange, onNavigate, onCopyUrl }) => {
+const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapterChange, onShortPress, onLongPress, onNavigate }) => {
     const { theme } = useTheme();
     const themeColors = colors[theme];
     const styles = createStyles(theme, themeColors);
@@ -70,8 +71,8 @@ const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapter
                 <View style={styles.thumbnailPlaceholder} />
             )}
             <TouchableOpacity
-                onPress={() => item.siteUrl ? onCopyUrl(item.siteUrl) : onNavigate(item.id)}
-                onLongPress={() => onNavigate(item.id)}
+                onPress={onShortPress}
+                onLongPress={onLongPress}
                 style={styles.titleTextContainer}
             >
                 <Text style={styles.titleName} numberOfLines={1} ellipsizeMode="tail">

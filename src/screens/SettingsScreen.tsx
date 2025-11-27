@@ -1,19 +1,19 @@
-// src/screens/NotificationSettingsScreen.tsx
+// src/screens/SettingsScreen.tsx
 
 // import de pacotes
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity, Platform } from 'react-native'; // TextInput removido
+import { View, Text, StyleSheet, Switch, TouchableOpacity, Platform, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
+import SwitchSelector from 'react-native-switch-selector';
 
 // import de arquivos
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
-// getTitles não é mais importado diretamente aqui.
+import { getSettings, saveSettings, TapAction, UserSettings } from '@/services/storageServices';
 
-// --- Importe TUDO do seu novo serviço de notificação ---
 import {
     NotificationPreferences,
     saveNotificationPreferences,
@@ -23,26 +23,27 @@ import {
 } from '@/services/notificationService';
 
 
-// --- Componente da tela de configurações ---
-const NotificationSettingsScreen: React.FC = () => {
+const SettingsScreen: React.FC = () => {
     const { theme } = useTheme();
+    const navigation = useNavigation();
+    
     const themeColors = colors[theme];
     const styles = createSettingsStyles(theme, themeColors);
-    const navigation = useNavigation();
 
-    // Estados para as preferências ATUAIS (salvas)
+    const [configs, setConfigs] = useState<UserSettings | null>(null);
     const [originalPreferences, setOriginalPreferences] = useState<NotificationPreferences | null>(null);
-
-    // Estados para as preferências TEMPORÁRIAS (em edição)
     const [tempIsEnabled, setTempIsEnabled] = useState(false);
-    const [tempDate, setTempDate] = useState(new Date(2000, 0, 1, 8, 0)); // Data arbitrária, importa apenas hora/minuto
+    const [tempDate, setTempDate] = useState(new Date(2000, 0, 1, 8, 0));
     const [showPicker, setShowPicker] = useState(false);
 
-    // Carrega as preferências salvas ao montar a tela
+    useEffect(() => {
+        getSettings().then(setConfigs);
+    }, []);
+
     useEffect(() => {
         async function loadPreferences() {
             const prefs = await getNotificationPreferences();
-            setOriginalPreferences(prefs); // Salva as preferências originais
+            setOriginalPreferences(prefs);
             setTempIsEnabled(prefs.enabled);
             const newDate = new Date(2000, 0, 1, prefs.hour, prefs.minute);
             setTempDate(newDate);
@@ -50,7 +51,6 @@ const NotificationSettingsScreen: React.FC = () => {
         loadPreferences();
     }, []);
 
-    // UseFocusEffect para pedir permissões e agendar ao focar na tela (garante que está atualizado)
     useFocusEffect(
         useCallback(() => {
             async function setupNotifications() {
@@ -58,17 +58,30 @@ const NotificationSettingsScreen: React.FC = () => {
                 if (prefs.enabled) {
                     await requestNotificationPermissions();
                 }
-                // Aqui também agendamos/reagendamos em caso de mudanças externas
                 await scheduleAllReleaseNotifications();
             }
             setupNotifications();
         }, [])
     );
 
-    const onTimeChange = (event: any, selectedDate?: Date) => {
-        setShowPicker(false); // Sempre fecha o picker após interação
+    if (!configs) {
+        return <View style={styles.container} />;
+    }
 
-        // Apenas atualiza a data/hora se o usuário de fato selecionou algo (e não cancelou)
+    const tapOptions = [
+        { label: 'Abrir Página', value: 'edit' },
+        { label: 'Abrir Link', value: 'open_url' },
+        { label: 'Copiar Link', value: 'copy_url' },
+    ];
+
+    const handleSettingsChange = (key: keyof UserSettings, value: TapAction) => {
+        const newConfigs = { ...configs, [key]: value };
+        setConfigs(newConfigs);
+        saveSettings(newConfigs);
+    };
+
+    const onTimeChange = (event: any, selectedDate?: Date) => {
+        setShowPicker(false);
         if (event.type === 'set' && selectedDate) {
             setTempDate(selectedDate);
         }
@@ -97,7 +110,6 @@ const NotificationSettingsScreen: React.FC = () => {
                     setTempIsEnabled(false);
                     await saveNotificationPreferences({ ...newPreferences, enabled: false });
                     await scheduleAllReleaseNotifications();
-                    // O Toast de permissão negada já é mostrado dentro de requestNotificationPermissions
                 }
             } else {
                 await Notifications.cancelAllScheduledNotificationsAsync();
@@ -107,29 +119,49 @@ const NotificationSettingsScreen: React.FC = () => {
             console.error("Erro ao salvar/agendar notificações:", error);
             Toast.show({ type: 'error', text1: 'Erro ao salvar', text2: 'Houve um problema ao salvar as configurações.' });
         } finally {
-            navigation.goBack(); // Volta para a tela anterior sempre, independentemente de erro
+            navigation.goBack();
         }
     };
 
-
     const handleCancel = () => {
-        // Reverter para as preferências originais (se existirem)
         if (originalPreferences) {
             setTempIsEnabled(originalPreferences.enabled);
             const newDate = new Date(2000, 0, 1, originalPreferences.hour, originalPreferences.minute);
             setTempDate(newDate);
         }
-        navigation.goBack(); // Volta para a tela anterior
+        navigation.goBack();
     };
 
-    // Formata o horário para exibição
     const displayHour = tempDate.getHours().toString().padStart(2, '0');
     const displayMinute = tempDate.getMinutes().toString().padStart(2, '0');
 
-
     return (
-        <View style={styles.container}>
-            {/* Visual do Relógio (representado pelo picker, que pode ser invocado por um toque) */}
+        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+            <View style={styles.card}>
+                <Text style={styles.title}>Interação com Títulos</Text>
+
+                <Text style={styles.label}>Toque Curto</Text>
+                <SwitchSelector
+                    options={tapOptions}
+                    initial={tapOptions.findIndex(opt => opt.value === configs.shortTapAction)}
+                    onPress={(value) => handleSettingsChange('shortTapAction', value as TapAction)}
+                    buttonColor={themeColors.primary}
+                    backgroundColor={themeColors.background}
+                    textColor={themeColors.text}
+                    style={{ marginBottom: 20 }}
+                />
+
+                <Text style={styles.label}>Toque Longo (Segurar)</Text>
+                <SwitchSelector
+                    options={tapOptions}
+                    initial={tapOptions.findIndex(opt => opt.value === configs.longPressAction)}
+                    onPress={(value) => handleSettingsChange('longPressAction', value as TapAction)}
+                    buttonColor={themeColors.primary}
+                    backgroundColor={themeColors.background}
+                    textColor={themeColors.text}
+                />
+            </View>
+
             <View style={styles.clockPlaceholder}>
                 <TouchableOpacity onPress={() => setShowPicker(true)} style={styles.timeDisplayWrapper}>
                     <Text style={styles.timeDisplayText}>{displayHour}</Text>
@@ -143,13 +175,12 @@ const NotificationSettingsScreen: React.FC = () => {
                         value={tempDate}
                         mode="time"
                         is24Hour={true}
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'} // 'spinner' no iOS é mais visual
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                         onChange={onTimeChange}
                     />
                 )}
             </View>
 
-            {/* Switch para Ativar/Desativar */}
             <View style={styles.settingRow}>
                 <Text style={styles.settingLabel}>Receber Avisos Diários</Text>
                 <Switch
@@ -160,7 +191,6 @@ const NotificationSettingsScreen: React.FC = () => {
                 />
             </View>
 
-            {/* Botões de Confirmar e Cancelar */}
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleCancel}>
                     <Text style={styles.buttonText}>Cancelar</Text>
@@ -173,7 +203,7 @@ const NotificationSettingsScreen: React.FC = () => {
             <Text style={styles.infoText}>
                 Você receberá uma notificação consolidada nos dias de lançamento, no horário selecionado.
             </Text>
-        </View>
+        </ScrollView>
     );
 };
 
@@ -184,8 +214,23 @@ const createSettingsStyles = (theme: 'light' | 'dark', themeColors: typeof color
             backgroundColor: themeColors.background,
             padding: 20,
         },
+        contentContainer: {
+            padding: 15,
+        },
+        card: {
+            backgroundColor: themeColors.card,
+            borderRadius: 8,
+            padding: 20,
+            marginBottom: 20,
+        },
+        title: {
+            fontSize: 20,
+            fontWeight: 'bold',
+            color: themeColors.text,
+            marginBottom: 20,
+        },
         clockPlaceholder: {
-            height: 200, // Altura para o visual do relógio
+            height: 200,
             justifyContent: 'center',
             alignItems: 'center',
             backgroundColor: themeColors.card,
@@ -194,6 +239,11 @@ const createSettingsStyles = (theme: 'light' | 'dark', themeColors: typeof color
             borderWidth: 1,
             borderColor: themeColors.border,
             overflow: 'hidden',
+        },
+        label: {
+            fontSize: 16,
+            color: themeColors.textSecondary,
+            marginBottom: 10,
         },
         timeDisplayWrapper: {
             flexDirection: 'row',
@@ -251,4 +301,4 @@ const createSettingsStyles = (theme: 'light' | 'dark', themeColors: typeof color
         },
     });
 
-export default NotificationSettingsScreen;
+export default SettingsScreen;
