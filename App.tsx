@@ -3,21 +3,24 @@
 // import de pacotes
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar } from 'expo-status-bar';
 import Toast from 'react-native-toast-message';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 // import de arquivos
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
-import TitleListScreen from '@/screens/TitleListScreen';
-import TitleDetailScreen from '@/screens/TitleDetailScreen';
 import { colors } from '@/styles/colors';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
+import TitleListScreen from '@/screens/TitleListScreen';
+import TitleDetailScreen from '@/screens/TitleDetailScreen';
+import StatisticsScreen from '@/screens/StatisticsScreen';
+import SettingsScreen from '@/screens/SettingsScreen';
 
 
 export type RootStackParamList = {
   TitleList: undefined;
   TitleDetail: { id?: string } | undefined;
+  Settings: undefined;
+  Statistics: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -53,6 +56,22 @@ function AppNavigator() {
           component={TitleDetailScreen}
           options={{
             title: 'Detalhes do título',
+            headerRight: () => <ThemeToggleButton />,
+          }}
+        />
+        <Stack.Screen
+          name='Settings'
+          component={SettingsScreen}
+          options={{
+            title: 'Configurações',
+            headerRight: () => <ThemeToggleButton />,
+          }}
+          />
+        <Stack.Screen
+          name='Statistics'        
+          component={StatisticsScreen}
+          options={{
+            title: 'Estatísticas',
             headerRight: () => <ThemeToggleButton />,
           }}
         />

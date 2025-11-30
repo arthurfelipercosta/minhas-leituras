@@ -2,16 +2,17 @@
 
 // import de pacotes
 import React, { useState, useCallback, useMemo, useLayoutEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Modal } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AntDesign, FontAwesome6 } from '@expo/vector-icons';
+import { AntDesign, FontAwesome6, Entypo } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import * as Clipboard from 'expo-clipboard';
+import * as Linking from 'expo-linking'
 
 // import de arquivos
 import { RootStackParamList } from 'App';
-import { getTitles, updateTitle, deleteTitle, saveTitles } from '@/services/storageServices';
+import { getTitles, updateTitle, deleteTitle, saveTitles, TapAction, UserSettings, getSettings } from '@/services/storageServices';
 import { Title } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
@@ -29,26 +30,32 @@ const TitleListScreen: React.FC = () => {
     const navigation = useNavigation<TitleListScreenNavigationProp>();
     const [titles, setTitles] = useState<Title[]>([]);
     const [loading, setLoading] = useState(true);
+    const [menu, setMenu] = useState(false);
+    const [settings, setSettings] = useState<UserSettings | null>(null);
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortOrder, setSortOrder] = useState<'alpha-asc' | 'alpha-desc' | 'release-day'>('alpha-asc');
+    const [sortOrder, setSortOrder] = useState<'alpha-asc' | 'alpha-desc' | 'release-day' | 'today-release'>('alpha-asc');
 
     const [titleToDeleteId, setTitleToDeleteId] = useState<string | null>(null);
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
     const [isExportModalVisible, setIsExportModalVisible] = useState(false);
     const [isImportModalVisible, setIsImportModalVisible] = useState(false);
 
-    const loadTitles = async () => {
+    const loadData = async () => {
         setLoading(true);
-        const storedTitles = await getTitles();
+        const [storedTitles, userSettings] = await Promise.all([
+            getTitles(),
+            getSettings()
+        ]);
         setTitles(storedTitles);
+        setSettings(userSettings);
         setLoading(false);
     };
 
     const confirmExport = useCallback(async () => {
         const sucess = await exportTitlesToTXTFile();
         if (sucess) {
-            await loadTitles();
+            await loadData();
             Toast.show({
                 type: 'success',
                 text1: 'Exportação concluída!',
@@ -68,7 +75,7 @@ const TitleListScreen: React.FC = () => {
     const confirmImport = useCallback(async () => {
         const sucess = await importTitlesFromTXTFile();
         if (sucess) {
-            await loadTitles();
+            await loadData();
             Toast.show({
                 type: 'success',
                 text1: 'Importação concluída!',
@@ -88,21 +95,17 @@ const TitleListScreen: React.FC = () => {
 
     useLayoutEffect(() => {
         navigation.setOptions({
+            title: ` Minhas leituras (${titles.length})`,
             headerRight: () => (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    {/* Botão de Exportar */}
-                    <TouchableOpacity onPress={handleExportFile} style={{ marginRight: 15 }}>
-                        <FontAwesome6 name="upload" size={24} color={themeColors.icon} />
-                    </TouchableOpacity>
-                    {/* Botão de Importar */}
-                    <TouchableOpacity onPress={handleImportFile} style={{ marginRight: 15 }}>
-                        <FontAwesome6 name="download" size={24} color={themeColors.icon} />
-                    </TouchableOpacity>
                     <ThemeToggleButton />
+                    <TouchableOpacity onPress={() => setMenu(true)} style={{ marginLeft: 15 }}>
+                        <Entypo name="dots-three-vertical" size={24} color={themeColors.icon} />
+                    </TouchableOpacity>
                 </View>
             ),
         });
-    }, [navigation, themeColors, handleExportFile, handleImportFile]);
+    }, [navigation, themeColors, titles.length]);
 
     // Função auxiliar para formatar o capítulo para exibição (sem .00 se for inteiro)
     const formatChapterForDisplay = (chapter: number): string => {
@@ -112,14 +115,17 @@ const TitleListScreen: React.FC = () => {
     // Carrega os títulos toda vez que a tela foca
     useFocusEffect(
         useCallback(() => {
-            loadTitles();
+            loadData();
         }, [])
     );
 
     const handleChapterChange = async (title: Title, delta: number) => {
-        // Garante que o delta seja sempre 1 ou -1 para capítulos inteiros
         const updatedChapter = Math.floor(title.currentChapter + delta);
-        const updatedTitle = { ...title, currentChapter: updatedChapter >= 0 ? updatedChapter : 0 };
+        const updatedTitle = {
+            ...title,
+            currentChapter: updatedChapter >= 0 ? updatedChapter : 0,
+            lastUpdate: new Date().toISOString()
+        };
         await updateTitle(updatedTitle);
         setTitles(prevTitles => prevTitles.map(t => t.id === updatedTitle.id ? updatedTitle : t));
     };
@@ -130,6 +136,8 @@ const TitleListScreen: React.FC = () => {
             setSortOrder('alpha-desc');
         } else if (sortOrder === 'alpha-desc') {
             setSortOrder('release-day');
+        } else if (sortOrder === 'release-day') {
+            setSortOrder('today-release');
         } else { setSortOrder('alpha-asc'); }
     }
 
@@ -143,6 +151,9 @@ const TitleListScreen: React.FC = () => {
                 return filteredTitles.sort((a, b) => b.name.localeCompare(a.name));
             case 'release-day':
                 return filteredTitles.sort((a, b) => (a.releaseDay ?? 8) - (b.releaseDay ?? 8));
+            case 'today-release':
+                const currentDay = new Date().getDay();
+                return filteredTitles.filter(title => title.releaseDay === currentDay);
             default:
                 return filteredTitles;
         }
@@ -151,13 +162,14 @@ const TitleListScreen: React.FC = () => {
     const getSortButtonText = () => {
         if (sortOrder === 'alpha-asc') return 'A-Z';
         if (sortOrder === 'alpha-desc') return 'Z-A';
-        return 'DIA';
+        if (sortOrder === 'release-day') return 'DIA';
+        return 'HOJE';
     }
     // Função para confirmar a exclusão
     const confirmDelete = async () => {
         if (titleToDeleteId) {
             await deleteTitle(titleToDeleteId);
-            await loadTitles();
+            await loadData();
             Toast.show({
                 type: 'success',
                 text1: 'Título Deletado!',
@@ -198,13 +210,34 @@ const TitleListScreen: React.FC = () => {
         }
     };
 
+    const performTapAction = async (action: TapAction, item: Title) => {
+        switch (action) {
+            case 'edit':
+                navigation.navigate('TitleDetail', { id: item.id });
+                break;
+            case 'open_url':
+                if (item.siteUrl) await Linking.openURL(item.siteUrl);
+                else navigation.navigate('TitleDetail', { id: item.id }); // Fallback
+                break;
+            case 'copy_url':
+                if (item.siteUrl) {
+                    await Clipboard.setStringAsync(item.siteUrl);
+                    Toast.show({ type: 'success', text1: 'Link Copiado!' });
+                } else {
+                    Toast.show({ type: 'info', text1: 'Nenhum link para copiar.' });
+                }
+                break;
+        }
+    }
+
     const renderTitleItem = ({ item }: { item: Title }) => (
         <TitleListItem
             item={item}
             onDelete={handleDeletePress}
             onChapterChange={handleChapterChange}
+            onShortPress={() => settings && performTapAction(settings.shortTapAction, item)}
+            onLongPress={() => settings && performTapAction(settings.longPressAction, item)}
             onNavigate={(id) => navigation.navigate('TitleDetail', { id })}
-            onCopyUrl={handleCopySiteUrl}
         />
     );
 
@@ -251,6 +284,34 @@ const TitleListScreen: React.FC = () => {
                 <AntDesign name="plus" size={24} color="white" />
             </TouchableOpacity>
 
+            <Modal
+                transparent
+                visible={menu}
+                onRequestClose={() => setMenu(false)}
+                animationType='fade'
+            >
+                <TouchableOpacity style={styles.modalOverlay} onPress={() => setMenu(false)}>
+                    <View style={styles.menuContainer}>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenu(false); navigation.navigate('Statistics'); }}>
+                            <Entypo name='area-graph' size={22} color={themeColors.text} />
+                            <Text style={styles.menuItemText}>Estatísticas</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenu(false); navigation.navigate('Settings'); }}>
+                            <FontAwesome6 name='gear' size={22} color={themeColors.text} />
+                            <Text style={styles.menuItemText}>Configurações</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenu(false); handleExportFile() }}>
+                            <FontAwesome6 name='upload' size={22} color={themeColors.text} />
+                            <Text style={styles.menuItemText}>Exportar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenu(false); handleImportFile(); }}>
+                            <FontAwesome6 name='download' size={22} color={themeColors.text} />
+                            <Text style={styles.menuItemText}>Importar</Text>
+                        </TouchableOpacity>
+                    </View >
+                </TouchableOpacity >
+            </Modal >
+
             <ConfirmationModal
                 isVisible={isDeleteModalVisible}
                 title="Confirmar Exclusão"
@@ -280,7 +341,7 @@ const TitleListScreen: React.FC = () => {
                 confirmButtonText="Importar"
                 cancelButtonText="Cancelar"
             />
-        </View>
+        </View >
     );
 };
 
@@ -343,6 +404,37 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
         sortButtonText: {
             color: 'white',
             fontWeight: 'bold',
+        },
+        modalOverlay: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'flex-start',
+            alignItems: 'flex-end',
+            paddingTop: 50,
+            paddingRight: 10,
+        },
+        menuContainer: {
+            alignItems: 'center',
+            backgroundColor: themeColors.card,
+            borderRadius: 8,
+            padding: 10,
+            width: 220,
+            elevation: 5,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+        },
+        menuItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: 12,
+        },
+        menuItemText: {
+            color: themeColors.text,
+            fontSize: 16,
+            marginLeft: 15,
+            width: 120
         },
     });
 

@@ -10,7 +10,8 @@ import {
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
-    ScrollView, // Importar ScrollView
+    ScrollView,
+    Switch
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -40,9 +41,11 @@ const TitleDetailScreen: React.FC = () => {
     const [title, setTitle] = useState<Title | null>(null); // Estado para o título completo
     const [titleName, setTitleName] = useState('');
     const [currentChapter, setCurrentChapter] = useState('0');
+    const [lastChapter, setLastChapter] = useState('');
     const [siteUrl, setSiteUrl] = useState('');
     const [releaseDay, setReleaseDay] = useState<number | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [isFinished, setIsFinished] = useState(false);
 
     const [coverImageUri, setCoverImageUri] = useState<string | null>(null); // Estado para a URI da imagem de capa
 
@@ -56,12 +59,18 @@ const TitleDetailScreen: React.FC = () => {
                 const titles = await getTitles();
                 const titleToEdit = titles.find((t) => t.id === id);
                 if (titleToEdit) {
-                    setTitle(titleToEdit); // Define o estado 'title'
-                    setTitleName(titleToEdit.name);
-                    setCurrentChapter(titleToEdit.currentChapter.toString());
-                    setSiteUrl(titleToEdit.siteUrl || ''); // Carrega o siteUrl para edição
-                    setReleaseDay(titleToEdit.releaseDay ?? null); // Carrega o dia salvo ou null
-                    setCoverImageUri(titleToEdit.coverUri || null); // Carregar a imagem de cover
+                    // Atualiza a data da última modificação sempre que o card for aberto para edição
+                    const updatedTitle = { ...titleToEdit, lastUpdate: new Date().toISOString() };
+                    await updateTitle(updatedTitle);
+
+                    setTitle(updatedTitle);
+                    setTitleName(updatedTitle.name);
+                    setCurrentChapter(updatedTitle.currentChapter.toString());
+                    setLastChapter(updatedTitle.lastChapter?.toString() || ''); // Carregar último capítulo
+                    setSiteUrl(updatedTitle.siteUrl || '');
+                    setReleaseDay(updatedTitle.releaseDay ?? null);
+                    setCoverImageUri(updatedTitle.coverUri || null);
+                    setIsFinished(updatedTitle.lastChapter !== undefined); // Definir o estado do Switch
                 }
             };
             loadTitleToEdit();
@@ -70,8 +79,10 @@ const TitleDetailScreen: React.FC = () => {
             setTitle(null); // Limpa o título se não estiver editando
             setTitleName('');
             setCurrentChapter('0');
+            setLastChapter('');
             setSiteUrl('');
             setReleaseDay(null);
+            setIsFinished(false);
             setCoverImageUri(null); // Limpa a imagem também
         }
     }, [id]);
@@ -118,8 +129,9 @@ const TitleDetailScreen: React.FC = () => {
             return;
         }
 
-        const chapterNumber = parseInt(currentChapter, 10);
-        if (isNaN(chapterNumber)) {
+        const chapterNumber = parseFloat(currentChapter.replace(',', '.'));
+        const lastChapterNumber = lastChapter ? parseFloat(lastChapter.replace(',', '.')) : undefined;
+        if (isNaN(chapterNumber) || (lastChapter && isNaN(lastChapterNumber!))) {
             Toast.show({
                 type: 'error',
                 text1: 'Erro',
@@ -141,10 +153,12 @@ const TitleDetailScreen: React.FC = () => {
             id: isEditing && title?.id ? title.id : '', // O ID será preenchido por addTitle se for novo
             name: titleName,
             currentChapter: chapterNumber,
+            lastChapter: isFinished ? lastChapterNumber : undefined,
             siteUrl: siteUrl.trim() || undefined,
             releaseDay: releaseDay ?? undefined,
             coverUri: coverImageUri || undefined, // Incluímos a URI da capa
             thumbnailUri: coverImageUri || undefined, // Por enquanto, usa a mesma da capa
+            lastUpdate: new Date().toISOString(), // Sempre atualizar data ao salvar
         };
 
         if (isEditing && id) {
@@ -171,7 +185,11 @@ const TitleDetailScreen: React.FC = () => {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <ScrollView contentContainerStyle={styles.formWrapper} scrollEnabled={false}>
+            <ScrollView
+                contentContainerStyle={styles.formWrapper}
+                scrollEnabled={true}
+                keyboardShouldPersistTaps='handled'
+            >
                 <View style={styles.form}>
                     <CoverImageInput imageUri={coverImageUri} onPress={handlePickImage} />
 
@@ -179,6 +197,7 @@ const TitleDetailScreen: React.FC = () => {
                     <TextInput
                         style={styles.input}
                         placeholder="Ex: O Pequeno Príncipe"
+                        placeholderTextColor={themeColors.textSecondary}
                         value={titleName}
                         onChangeText={setTitleName}
                     />
@@ -201,6 +220,7 @@ const TitleDetailScreen: React.FC = () => {
                         <TextInput
                             style={[styles.input, styles.chapterInput]}
                             placeholder="0" // Placeholder para inteiro
+                            placeholderTextColor={themeColors.textSecondary}
                             keyboardType="decimal-pad"
                             value={currentChapter}
                             onChangeText={(text) => {
@@ -242,6 +262,7 @@ const TitleDetailScreen: React.FC = () => {
                         <TextInput
                             style={[styles.input, styles.siteUrlInput]}
                             placeholder="Ex: https://mangadex.org/title/..."
+                            placeholderTextColor={themeColors.textSecondary}
                             value={siteUrl}
                             onChangeText={setSiteUrl}
                             keyboardType="url"
@@ -270,6 +291,28 @@ const TitleDetailScreen: React.FC = () => {
                             </TouchableOpacity>
                         ))}
                     </View>
+                    <View style={styles.finishedContainer}>
+                        <Text style={styles.label}>Concluído?</Text>
+                        <Switch
+                            trackColor={{ false: themeColors.switchInactive, true: themeColors.switchActive }}
+                            thumbColor={isFinished ? themeColors.switchActive : themeColors.switchTumb}
+                            onValueChange={() => setIsFinished(previousState => !previousState)}
+                            value={isFinished}
+                        />
+                    </View>
+                    {isFinished && (
+                        <>
+                            <Text style={styles.label}>Último Capítulo:</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ex: 150"
+                                placeholderTextColor={themeColors.textSecondary}
+                                keyboardType="decimal-pad"
+                                value={lastChapter}
+                                onChangeText={setLastChapter}
+                            />
+                        </>
+                    )}
                     <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                         <Text style={styles.saveButtonText}>{isEditing ? 'Salvar' : 'Adicionar'}</Text>
                     </TouchableOpacity>
@@ -287,6 +330,7 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
         },
         formWrapper: { // Estilo para o contentContainerStyle do ScrollView
             padding: 20,
+            paddingBottom: 60,
         },
         form: {
             backgroundColor: themeColors.card,
@@ -304,6 +348,12 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
                     borderWidth: 1,
                     borderColor: themeColors.border,
                 }),
+        },
+        finishedContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 15,
         },
         label: {
             fontSize: 16,
