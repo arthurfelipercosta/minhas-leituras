@@ -1,3 +1,6 @@
+// src/context/ThemeContext.tsx
+
+// import de pacotes
 import React, { createContext, useState, useContext, useMemo, useEffect } from 'react';
 import { Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';

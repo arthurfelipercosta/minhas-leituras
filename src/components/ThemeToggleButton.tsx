@@ -1,6 +1,11 @@
+// src/components/ThemeToggleButton.tsx
+
+// import de pacotes
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+// import de arquivos
 import { useTheme } from '../context/ThemeContext';
 import { colors } from '../styles/colors';
 

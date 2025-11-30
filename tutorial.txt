@@ -1,0 +1,317 @@
+---> npx create-expo-app MinhasLeituras --template
+
+---> cd MinhasLeituras
+
+---> npx expo install @react-navigation/native @react-navigation/native-stack react-native-screens react-native-safe-area-context @react-native-async-storage/async-storage
+
+---> npm install react-native-uuid
+
+---> MinhasLeiturasV2/
+---> └── src/
+--->     └── screens/
+--->         ├── TitleListScreen.tsx   // Tela para listar todos os livros
+--->         └── TitleDetailScreen.tsx // Tela para criar ou editar um livro
+
+---> src/screens/TitleListScreen.tsx
+
+import React from 'react';
+import { View, Text, Button, StyleSheet } from 'react-native';
+
+export default function TitleListScreen({ navigation }) {
+  return (
+    <View style={styles.container}>
+      <Text>Lista de Livros</Text>
+      <Button
+        title="Adicionar Novo Livro"
+        onPress={() => navigation.navigate('TitleDetail')}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
+---> src/screens/TitleDetailScreen.tsx
+
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+export default function TitleDetailScreen() {
+  return (
+    <View style={styles.container}>
+      <Text>Detalhes do Livro (Criar/Editar)</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
+---> App.tsx
+
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import TitleListScreen from './src/screens/TitleListScreen';
+import TitleDetailScreen from './src/screens/TitleDetailScreen';
+
+// Define os tipos de parâmetros para cada tela
+export type RootStackParamList = {
+  TitleList: undefined; // A tela de lista não recebe parâmetros
+  TitleDetail: { id?: string }; // A tela de detalhe pode receber um ID (para editar)
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="TitleList">
+          <Stack.Screen
+            name="TitleList"
+            component={TitleListScreen}
+            options={{ title: 'Minhas Leituras' }}
+          />
+          <Stack.Screen
+            name="TitleDetail"
+            component={TitleDetailScreen}
+            options={({ route }) => ({
+              // O título da tela muda se estamos editando ou criando
+              title: route.params?.id ? 'Editar Título' : 'Novo Título',
+            })}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
+}
+
+---> src/services/storage.ts
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const TITLES_KEY = '@MinhasLeituras:titles';
+
+export interface Title {
+  id: string;
+  name: string;
+  author: string;
+}
+
+export async function getTitles(): Promise<Title[]> {
+  try {
+    const jsonValue = await AsyncStorage.getItem(TITLES_KEY);
+    return jsonValue != null ? JSON.parse(jsonValue) : [];
+  } catch (e) {
+    console.error("Erro ao buscar títulos", e);
+    return [];
+  }
+}
+
+export async function saveTitle(title: Title): Promise<void> {
+  try {
+    const currentTitles = await getTitles();
+    const existingIndex = currentTitles.findIndex(t => t.id === title.id);
+
+    if (existingIndex !== -1) {
+      // Atualiza o título existente
+      currentTitles[existingIndex] = title;
+    } else {
+      // Adiciona um novo título
+      currentTitles.push(title);
+    }
+    
+    const jsonValue = JSON.stringify(currentTitles);
+    await AsyncStorage.setItem(TITLES_KEY, jsonValue);
+  } catch (e) {
+    console.error("Erro ao salvar título", e);
+  }
+}
+
+export async function deleteTitle(id: string): Promise<void> {
+  try {
+    const currentTitles = await getTitles();
+    const updatedTitles = currentTitles.filter(t => t.id !== id);
+    const jsonValue = JSON.stringify(updatedTitles);
+    await AsyncStorage.setItem(TITLES_KEY, jsonValue);
+  } catch (e) {
+    console.error("Erro ao deletar título", e);
+  }
+}
+
+---> TitleListScreen
+
+import React, { useState, useCallback } from 'react';
+import { View, Text, Button, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { getTitles, Title } from '../services/storage';
+
+export default function TitleListScreen({ navigation }) {
+  const [titles, setTitles] = useState<Title[]>([]);
+
+  // useFocusEffect é como o useEffect, mas roda toda vez que a tela entra em foco
+  useFocusEffect(
+    useCallback(() => {
+      async function loadTitles() {
+        const storedTitles = await getTitles();
+        setTitles(storedTitles);
+      }
+      loadTitles();
+    }, [])
+  );
+
+  const renderItem = ({ item }: { item: Title }) => (
+    <TouchableOpacity 
+      style={styles.itemContainer}
+      onPress={() => navigation.navigate('TitleDetail', { id: item.id })}
+    >
+      <Text style={styles.itemTitle}>{item.name}</Text>
+      <Text style={styles.itemAuthor}>{item.author}</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={titles}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+        ListEmptyComponent={<Text>Nenhum livro cadastrado.</Text>}
+      />
+      <Button
+        title="Adicionar Novo Livro"
+        onPress={() => navigation.navigate('TitleDetail')}
+      />
+    </View>
+  );
+}
+
+// Adicione alguns estilos para a lista
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 10,
+  },
+  itemContainer: {
+    backgroundColor: '#f9f9f9',
+    padding: 20,
+    marginVertical: 8,
+    borderRadius: 5,
+  },
+  itemTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  itemAuthor: {
+    fontSize: 14,
+  },
+});
+
+---> TitleDetailScreen
+
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { getTitles, saveTitle, deleteTitle, Title } from '../services/storage';
+import uuid from 'react-native-uuid';
+
+export default function TitleDetailScreen({ route, navigation }) {
+  const { id } = route.params || {};
+  const [name, setName] = useState('');
+  const [author, setAuthor] = useState('');
+  const isEditing = !!id;
+
+  useEffect(() => {
+    if (isEditing) {
+      async function loadTitle() {
+        const storedTitles = await getTitles();
+        const titleToEdit = storedTitles.find(t => t.id === id);
+        if (titleToEdit) {
+          setName(titleToEdit.name);
+          setAuthor(titleToEdit.author);
+        }
+      }
+      loadTitle();
+    }
+  }, [id]);
+
+  const handleSave = async () => {
+    if (!name.trim() || !author.trim()) {
+      Alert.alert("Erro", "Por favor, preencha todos os campos.");
+      return;
+    }
+    
+    const titleData: Title = {
+      id: isEditing ? id : (uuid.v4() as string),
+      name: name.trim(),
+      author: author.trim(),
+    };
+    
+    await saveTitle(titleData);
+    navigation.goBack();
+  };
+
+  const handleDelete = async () => {
+    Alert.alert(
+      "Confirmar Exclusão",
+      "Você tem certeza que deseja apagar este livro?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Apagar", style: "destructive", onPress: async () => {
+          await deleteTitle(id);
+          navigation.goBack();
+        }}
+      ]
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder="Nome do Livro"
+        value={name}
+        onChangeText={setName}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Autor"
+        value={author}
+        onChangeText={setAuthor}
+      />
+      <Button title="Salvar" onPress={handleSave} />
+      {isEditing && (
+        <View style={{ marginTop: 20 }}>
+          <Button title="Apagar Livro" color="red" onPress={handleDelete} />
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+});

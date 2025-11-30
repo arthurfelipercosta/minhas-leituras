@@ -1,5 +1,10 @@
+// src/components/ConfirmationModal.tsx
+
+// import de pacotes
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+
+// import de arquivos
 import { useTheme } from '../context/ThemeContext';
 import { colors } from '../styles/colors';
 
@@ -34,13 +39,13 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             onRequestClose={onCancel}
         >
             <TouchableOpacity
-                style={styles.centeredView} 
-                activeOpacity={1} 
-                onPress={onCancel} 
+                style={styles.centeredView}
+                activeOpacity={1}
+                onPress={onCancel}
             >
-                <View style={styles.modalView} 
+                <View style={styles.modalView}
                     onStartShouldSetResponder={() => true}
-                    onResponderRelease={() => { }} 
+                    onResponderRelease={() => { }}
                 >
                     <Text style={styles.modalTitle}>{title}</Text>
                     <Text style={styles.modalMessage}>{message}</Text>

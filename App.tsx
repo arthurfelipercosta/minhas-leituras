@@ -1,11 +1,19 @@
+// App.tsx
+
+// import de pacotes
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import TitleListScreen from './src/screens/TitleListScreen';
-import TitleDetailScreen from './src/screens/TitleDetailScreen';
-import { ThemeProvider, useTheme } from './src/context/ThemeContext';
-import { colors } from './src/styles/colors';
-import { ThemeToggleButton } from './src/components/ThemeToggleButton';
+import { StatusBar } from 'expo-status-bar';
 import Toast from 'react-native-toast-message';
+import { StyleSheet, Text, View } from 'react-native';
+
+// import de arquivos
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import TitleListScreen from '@/screens/TitleListScreen';
+import TitleDetailScreen from '@/screens/TitleDetailScreen';
+import { colors } from '@/styles/colors';
+import { ThemeToggleButton } from '@/components/ThemeToggleButton';
+
 
 export type RootStackParamList = {
   TitleList: undefined;
@@ -32,25 +40,25 @@ function AppNavigator() {
 
   return (
     <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator initialRouteName="TitleList">
+      <Stack.Navigator initialRouteName='TitleList' id={undefined}>
         <Stack.Screen
-          name="TitleList"
+          name='TitleList'
           component={TitleListScreen}
           options={{
-            title: 'Minhas Leituras',
-            headerRight: () => <ThemeToggleButton />,
+            title: 'Minhas Leituras'
           }}
         />
         <Stack.Screen
-          name="TitleDetail"
+          name='TitleDetail'
           component={TitleDetailScreen}
-          options={({ route }) => ({
-            title: route.params?.id ? 'Editar Título' : 'Novo Título',
-          })}
+          options={{
+            title: 'Detalhes do título',
+            headerRight: () => <ThemeToggleButton />,
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
-  );
+  )
 }
 
 export default function App() {
@@ -61,3 +69,12 @@ export default function App() {
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

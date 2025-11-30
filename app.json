@@ -25,20 +25,13 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.arthurfrc.minhasleituras"
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "0816fbd0-47e3-423d-b0bf-f6f30d9e118f"
-      }
-    },
     "plugins": [
-      "expo-font",
-      "react-native-google-mobile-ads"
+      "expo-font"
     ]
   }
 }
