@@ -1,4 +1,4 @@
-// App.tsx
+// src/App.tsx
 
 // import de pacotes
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
@@ -14,6 +14,7 @@ import TitleListScreen from '@/screens/TitleListScreen';
 import TitleDetailScreen from '@/screens/TitleDetailScreen';
 import StatisticsScreen from '@/screens/StatisticsScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
+import LoginScreen from '@/screens/auth/LoginScreen';
 
 
 export type RootStackParamList = {
@@ -21,6 +22,7 @@ export type RootStackParamList = {
   TitleDetail: { id?: string } | undefined;
   Settings: undefined;
   Statistics: undefined;
+  Login: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -74,6 +76,11 @@ function AppNavigator() {
             title: 'Estatísticas',
             headerRight: () => <ThemeToggleButton />,
           }}
+        />
+        <Stack.Screen
+          name='Login'
+          component={LoginScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

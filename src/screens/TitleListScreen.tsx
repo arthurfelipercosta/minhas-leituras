@@ -1,25 +1,40 @@
 // src/screens/TitleListScreen.tsx
 
 // import de pacotes
-import React, { useState, useCallback, useMemo, useLayoutEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Modal } from 'react-native';
+import React, { useState, useCallback, useMemo, useLayoutEffect, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Modal, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+// Removido MaterialCommunityIcons, AntDesign já tem cloud-sync
 import { AntDesign, FontAwesome6, Entypo } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import * as Clipboard from 'expo-clipboard';
-import * as Linking from 'expo-linking'
+import * as Linking from 'expo-linking';
 
 // import de arquivos
 import { RootStackParamList } from 'App';
-import { getTitles, updateTitle, deleteTitle, saveTitles, TapAction, UserSettings, getSettings } from '@/services/storageServices';
+import {
+    getTitles,
+    updateTitle,
+    deleteTitle,
+    TapAction,
+    UserSettings,
+    getSettings,
+    exportTitles,
+    importTitles,
+    syncLocalToCloud,
+    syncCloudToLocal,
+    getTitlesFromCloud // Ainda útil para debug ou outras lógicas
+} from '@/services/storageServices';
 import { Title } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
-import { importTitlesFromTXTFile, exportTitlesToTXTFile } from '@/services/jsonService';
 import TitleListItem from '@/components/TitleListItem';
+
+import { auth } from '@/config/firebaseConfig';
+import { signOut, User } from 'firebase/auth';
 
 type TitleListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TitleList'>;
 
@@ -28,6 +43,15 @@ const TitleListScreen: React.FC = () => {
     const themeColors = colors[theme];
     const styles = createStyles(theme, themeColors);
     const navigation = useNavigation<TitleListScreenNavigationProp>();
+
+    const [user, setUser] = useState<User | null>(auth.currentUser);
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged(currentUser => {
+            setUser(currentUser);
+        });
+        return () => unsubscribe();
+    }, []);
+
     const [titles, setTitles] = useState<Title[]>([]);
     const [loading, setLoading] = useState(true);
     const [menu, setMenu] = useState(false);
@@ -41,7 +65,10 @@ const TitleListScreen: React.FC = () => {
     const [isExportModalVisible, setIsExportModalVisible] = useState(false);
     const [isImportModalVisible, setIsImportModalVisible] = useState(false);
 
-    const loadData = async () => {
+    const [isSyncing, setIsSyncing] = useState(false);
+
+
+    const loadData = useCallback(async () => {
         setLoading(true);
         const [storedTitles, userSettings] = await Promise.all([
             getTitles(),
@@ -50,19 +77,27 @@ const TitleListScreen: React.FC = () => {
         setTitles(storedTitles);
         setSettings(userSettings);
         setLoading(false);
-    };
+    }, []);
 
     const confirmExport = useCallback(async () => {
-        const sucess = await exportTitlesToTXTFile();
-        if (sucess) {
-            await loadData();
+        try {
+            const jsonString = await exportTitles();
+            await Clipboard.setStringAsync(jsonString);
             Toast.show({
                 type: 'success',
                 text1: 'Exportação concluída!',
-                text2: 'Arquivo exportado com sucesso.'
+                text2: 'Títulos copiados para a área de transferência.'
             });
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro na Exportação',
+                text2: 'Não foi possível exportar os títulos.'
+            });
+            console.error(error);
+        } finally {
+            setIsExportModalVisible(false);
         }
-        setIsExportModalVisible(false);
     }, []);
 
     const cancelExport = useCallback(() => {
@@ -73,17 +108,35 @@ const TitleListScreen: React.FC = () => {
     }, []);
 
     const confirmImport = useCallback(async () => {
-        const sucess = await importTitlesFromTXTFile();
-        if (sucess) {
+        try {
+            const jsonString = await Clipboard.getStringAsync();
+            if (!jsonString) {
+                Toast.show({
+                    type: 'info',
+                    text1: 'Nada para Importar',
+                    text2: 'A área de transferência está vazia ou não contém dados.'
+                });
+                setIsImportModalVisible(false);
+                return;
+            }
+            await importTitles(jsonString);
             await loadData();
             Toast.show({
                 type: 'success',
                 text1: 'Importação concluída!',
                 text2: 'Título(s) importado(s) com sucesso.'
             });
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro na Importação',
+                text2: (error as Error).message || 'Não foi possível importar os títulos.'
+            });
+            console.error(error);
+        } finally {
+            setIsImportModalVisible(false);
         }
-        setIsImportModalVisible(false);
-    }, []);
+    }, [loadData]);
 
     const cancelImport = useCallback(() => {
         setIsImportModalVisible(false);
@@ -93,30 +146,98 @@ const TitleListScreen: React.FC = () => {
         setIsImportModalVisible(true);
     }, []);
 
+    // --- NOVA FUNÇÃO: Sincronização Rápida (Upload para Nuvem) ---
+    const handleQuickCloudSync = useCallback(async () => {
+        if (!user) {
+            Toast.show({
+                type: 'info',
+                text1: 'Login Necessário',
+                text2: 'Faça login para sincronizar com a nuvem.'
+            });
+            return;
+        }
+        setIsSyncing(true);
+        try {
+            await syncLocalToCloud();
+            Toast.show({
+                type: 'success',
+                text1: 'Sincronizado',
+                text2: 'Dados locais enviados para a nuvem.'
+            });
+            await loadData(); // Recarrega os dados locais
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro na Sincronização',
+                text2: (error as Error).message || 'Não foi possível sincronizar com a nuvem.'
+            });
+            console.error('Erro de sincronização rápida:', error);
+        } finally {
+            setIsSyncing(false);
+        }
+    }, [user, loadData]);
+
+    // --- NOVA FUNÇÃO: Acesso à Tela de Login/Sincronização ---
+    const handleCloudLoginOrOptions = useCallback(() => {
+        navigation.navigate('Login'); // Navega para a LoginScreen (onde o usuário pode logar/deslogar)
+    }, [navigation]);
+
+    const handleLogout = useCallback(async () => {
+        try {
+            await signOut(auth);
+            Toast.show({
+                type: 'success',
+                text1: 'Logout',
+                text2: 'Você foi desconectado com sucesso.'
+            });
+            await loadData();
+            setMenu(false);
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro ao fazer logout',
+                text2: 'Não foi possível desconectar. Tente novamente.'
+            });
+            console.error("Erro ao fazer logout:", error);
+        }
+    }, [loadData]);
+
+
     useLayoutEffect(() => {
         navigation.setOptions({
             title: ` Minhas leituras (${titles.length})`,
             headerRight: () => (
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={styles.headerRightContainer}>
+                    {/* Ícone de Nuvem com Toque Rápido/Longo */}
+                    <TouchableOpacity
+                        onPress={handleQuickCloudSync} // Toque rápido: sincroniza
+                        onLongPress={handleCloudLoginOrOptions} // Toque longo: vai para a tela de login/opções
+                        style={styles.cloudIconContainer}
+                        disabled={isSyncing} // Desabilita enquanto sincroniza
+                    >
+                        {isSyncing ? (
+                            <ActivityIndicator size="small" color={themeColors.icon} />
+                        ) : (
+                            <AntDesign name="cloud-sync" size={24} color={themeColors.icon} />
+                        )}
+                    </TouchableOpacity>
                     <ThemeToggleButton />
-                    <TouchableOpacity onPress={() => setMenu(true)} style={{ marginLeft: 15 }}>
+                    <TouchableOpacity onPress={() => setMenu(true)} style={styles.dotsMenuButton}>
                         <Entypo name="dots-three-vertical" size={24} color={themeColors.icon} />
                     </TouchableOpacity>
                 </View>
             ),
         });
-    }, [navigation, themeColors, titles.length]);
+    }, [navigation, themeColors, titles.length, isSyncing, handleQuickCloudSync, handleCloudLoginOrOptions]); // Adicionado dependências
 
-    // Função auxiliar para formatar o capítulo para exibição (sem .00 se for inteiro)
     const formatChapterForDisplay = (chapter: number): string => {
-        return Number.isInteger(chapter) ? chapter.toString() : chapter.toFixed(1); // Garante que seja um inteiro e converte para string
+        return Number.isInteger(chapter) ? chapter.toString() : chapter.toFixed(1);
     };
 
-    // Carrega os títulos toda vez que a tela foca
     useFocusEffect(
         useCallback(() => {
             loadData();
-        }, [])
+        }, [loadData])
     );
 
     const handleChapterChange = async (title: Title, delta: number) => {
@@ -127,10 +248,9 @@ const TitleListScreen: React.FC = () => {
             lastUpdate: new Date().toISOString()
         };
         await updateTitle(updatedTitle);
-        setTitles(prevTitles => prevTitles.map(t => t.id === updatedTitle.id ? updatedTitle : t));
+        await loadData();
     };
 
-    // Função para alternar a ordem de ordenação
     const handleSortChange = () => {
         if (sortOrder === 'alpha-asc') {
             setSortOrder('alpha-desc');
@@ -165,7 +285,6 @@ const TitleListScreen: React.FC = () => {
         if (sortOrder === 'release-day') return 'DIA';
         return 'HOJE';
     }
-    // Função para confirmar a exclusão
     const confirmDelete = async () => {
         if (titleToDeleteId) {
             await deleteTitle(titleToDeleteId);
@@ -177,22 +296,19 @@ const TitleListScreen: React.FC = () => {
             });
             setTitleToDeleteId(null);
         }
-        setIsDeleteModalVisible(false); // Fecha o modal após a ação
+        setIsDeleteModalVisible(false);
     };
 
-    // Função para cancelar a exclusão
     const cancelDelete = () => {
         setIsDeleteModalVisible(false);
         setTitleToDeleteId(null);
     };
 
-    // Função chamada quando o botão de exclusão é pressionado em um item
     const handleDeletePress = (id: string) => {
         setTitleToDeleteId(id);
         setIsDeleteModalVisible(true);
     };
 
-    // Função para copiar o siteUrl para a área de transferência
     const handleCopySiteUrl = async (url: string | undefined) => {
         if (url) {
             await Clipboard.setStringAsync(url);
@@ -209,7 +325,6 @@ const TitleListScreen: React.FC = () => {
             })
         }
     };
-
     const performTapAction = async (action: TapAction, item: Title) => {
         switch (action) {
             case 'edit':
@@ -230,7 +345,7 @@ const TitleListScreen: React.FC = () => {
         }
     }
 
-    const renderTitleItem = ({ item }: { item: Title }) => (
+    const renderTitleItem = useCallback(({ item }: { item: Title }) => (
         <TitleListItem
             item={item}
             onDelete={handleDeletePress}
@@ -239,12 +354,16 @@ const TitleListScreen: React.FC = () => {
             onLongPress={() => settings && performTapAction(settings.longPressAction, item)}
             onNavigate={(id) => navigation.navigate('TitleDetail', { id })}
         />
-    );
+    ), [settings, performTapAction, handleDeletePress, handleChapterChange, navigation]);
 
-    if (loading) {
+
+    if (loading || isSyncing) {
         return (
             <View style={[styles.centered, { backgroundColor: themeColors.background }]}>
-                <Text style={{ color: themeColors.text }}>Carregando títulos...</Text>
+                <ActivityIndicator size="large" color={themeColors.primary} />
+                <Text style={{ color: themeColors.text, marginTop: 10 }}>
+                    {loading ? 'Carregando títulos...' : 'Sincronizando com a nuvem...'}
+                </Text>
             </View>
         );
     }
@@ -308,9 +427,17 @@ const TitleListScreen: React.FC = () => {
                             <FontAwesome6 name='download' size={22} color={themeColors.text} />
                             <Text style={styles.menuItemText}>Importar</Text>
                         </TouchableOpacity>
+                        {user && ( // Mostra o botão de logout apenas se o usuário estiver logado
+                            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+                                <AntDesign name='logout' size={22} color={themeColors.text} />
+                                <Text style={styles.menuItemText}>Sair</Text>
+                            </TouchableOpacity>
+                        )}
                     </View >
                 </TouchableOpacity >
             </Modal >
+
+            {/* O modal de sincronização em nuvem foi removido, a lógica está no ícone */}
 
             <ConfirmationModal
                 isVisible={isDeleteModalVisible}
@@ -325,7 +452,7 @@ const TitleListScreen: React.FC = () => {
             <ConfirmationModal
                 isVisible={isExportModalVisible}
                 title="Confirmar Exportação"
-                message="Deseja exportar todos os títulos para um arquivo TXT?"
+                message="Deseja exportar todos os títulos para um arquivo de texto?"
                 onConfirm={confirmExport}
                 onCancel={cancelExport}
                 confirmButtonText="Exportar"
@@ -335,7 +462,7 @@ const TitleListScreen: React.FC = () => {
             <ConfirmationModal
                 isVisible={isImportModalVisible}
                 title="Confirmar Importação"
-                message="Deseja importar todos os títulos? Os existentes não serão deletados."
+                message="Deseja importar todos os títulos para o armazenamento local? Títulos existentes não serão duplicados."
                 onConfirm={confirmImport}
                 onCancel={cancelImport}
                 confirmButtonText="Importar"
@@ -436,6 +563,16 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
             marginLeft: 15,
             width: 120
         },
+        headerRightContainer: { // Novo estilo para o container dos ícones do cabeçalho
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        cloudIconContainer: { // Estilo para o ícone da nuvem
+            marginRight: 15,
+        },
+        dotsMenuButton: { // Estilo para o botão de 3 pontinhos
+            marginLeft: 15,
+        }
     });
 
 export default TitleListScreen;

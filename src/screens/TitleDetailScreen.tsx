@@ -11,7 +11,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    Switch
+    Switch,
+    Image // Adicionado para exibir a imagem de capa
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -21,7 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 //import de arquivos
 import { RootStackParamList } from 'App';
-import { addTitle, updateTitle, getTitles } from '@/services/storageServices';
+import { addTitle, updateTitle, getTitles } from '@/services/storageServices'; // Usa as funções LOCAIS
 import { Title } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
@@ -38,7 +39,6 @@ const TitleDetailScreen: React.FC = () => {
     const route = useRoute<TitleDetailScreenProps['route']>();
     const { id } = route.params || {}; // Pega o ID se estiver editando
 
-    const [title, setTitle] = useState<Title | null>(null); // Estado para o título completo
     const [titleName, setTitleName] = useState('');
     const [currentChapter, setCurrentChapter] = useState('0');
     const [lastChapter, setLastChapter] = useState('');
@@ -47,45 +47,49 @@ const TitleDetailScreen: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
 
-    const [coverImageUri, setCoverImageUri] = useState<string | null>(null); // Estado para a URI da imagem de capa
+    const [coverImageUri, setCoverImageUri] = useState<string | null>(null); // Estado para a URI da imagem de capa (local)
 
     const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']; // Dias da semana para a UI
 
     useEffect(() => {
-        if (id) {
-            // Se tiver um ID, estamos editando um título existente
-            setIsEditing(true);
-            const loadTitleToEdit = async () => {
-                const titles = await getTitles();
-                const titleToEdit = titles.find((t) => t.id === id);
-                if (titleToEdit) {
-                    // Atualiza a data da última modificação sempre que o card for aberto para edição
-                    const updatedTitle = { ...titleToEdit, lastUpdate: new Date().toISOString() };
-                    await updateTitle(updatedTitle);
+        const loadTitleData = async () => {
+            if (id) {
+                setIsEditing(true);
+                // Busca todos os títulos LOCAIS e encontra o que corresponde ao ID
+                const allTitles = await getTitles(); // <--- Busca do AsyncStorage
+                const titleToEdit = allTitles.find((t) => t.id === id);
 
-                    setTitle(updatedTitle);
-                    setTitleName(updatedTitle.name);
-                    setCurrentChapter(updatedTitle.currentChapter.toString());
-                    setLastChapter(updatedTitle.lastChapter?.toString() || ''); // Carregar último capítulo
-                    setSiteUrl(updatedTitle.siteUrl || '');
-                    setReleaseDay(updatedTitle.releaseDay ?? null);
-                    setCoverImageUri(updatedTitle.coverUri || null);
-                    setIsFinished(updatedTitle.lastChapter !== undefined); // Definir o estado do Switch
+                if (titleToEdit) {
+                    setTitleName(titleToEdit.name);
+                    setCurrentChapter(titleToEdit.currentChapter.toString());
+                    setLastChapter(titleToEdit.lastChapter?.toString() || '');
+                    setSiteUrl(titleToEdit.siteUrl || '');
+                    setReleaseDay(titleToEdit.releaseDay ?? null);
+                    setCoverImageUri(titleToEdit.coverUri || null); // Carrega a URI (que agora pode ser local ou de nuvem, se já sincronizado)
+                    setIsFinished(titleToEdit.lastChapter !== undefined);
+                } else {
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Erro',
+                        text2: 'Título não encontrado.',
+                    });
+                    navigation.goBack();
                 }
-            };
-            loadTitleToEdit();
-        } else {
-            setIsEditing(false);
-            setTitle(null); // Limpa o título se não estiver editando
-            setTitleName('');
-            setCurrentChapter('0');
-            setLastChapter('');
-            setSiteUrl('');
-            setReleaseDay(null);
-            setIsFinished(false);
-            setCoverImageUri(null); // Limpa a imagem também
-        }
-    }, [id]);
+            } else {
+                // Limpa os campos para um novo título
+                setIsEditing(false);
+                setTitleName('');
+                setCurrentChapter('0');
+                setLastChapter('');
+                setSiteUrl('');
+                setReleaseDay(null);
+                setIsFinished(false);
+                setCoverImageUri(null);
+            }
+        };
+        loadTitleData();
+    }, [id, navigation]);
+
 
     const handlePickImage = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -99,14 +103,14 @@ const TitleDetailScreen: React.FC = () => {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'], // Forma correta para o ImagePicker atual
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [2, 3], // Proporção de capa
             quality: 1,
         });
 
         if (!result.canceled) {
-            setCoverImageUri(result.assets[0].uri);
+            setCoverImageUri(result.assets[0].uri); // Salva a URI local no estado
         }
     };
 
@@ -135,7 +139,7 @@ const TitleDetailScreen: React.FC = () => {
             Toast.show({
                 type: 'error',
                 text1: 'Erro',
-                text2: 'O capítulo deve ser um número inteiro válido.',
+                text2: 'Capítulo(s) deve(m) ser número(s) válido(s).',
             });
             return;
         }
@@ -149,35 +153,37 @@ const TitleDetailScreen: React.FC = () => {
             return;
         }
 
-        const titleData: Title = {
-            id: isEditing && title?.id ? title.id : '', // O ID será preenchido por addTitle se for novo
+        const titleData = {
             name: titleName,
             currentChapter: chapterNumber,
             lastChapter: isFinished ? lastChapterNumber : undefined,
             siteUrl: siteUrl.trim() || undefined,
             releaseDay: releaseDay ?? undefined,
-            coverUri: coverImageUri || undefined, // Incluímos a URI da capa
-            thumbnailUri: coverImageUri || undefined, // Por enquanto, usa a mesma da capa
-            lastUpdate: new Date().toISOString(), // Sempre atualizar data ao salvar
+            coverUri: coverImageUri || null, // A URI pode ser local ou da nuvem
+            thumbnailUri: coverImageUri || null, // Por enquanto, usa a mesma da capa
+            lastUpdate: new Date().toISOString(),
         };
 
         if (isEditing && id) {
-            titleData.id = id; // Garante que o ID do objeto seja o da rota para atualização
-            await updateTitle(titleData); // Passamos o objeto titleData completo
+            const updatedTitle: Title = {
+                id: id, // ID do título existente
+                ...titleData,
+            };
+            await updateTitle(updatedTitle); // <--- Usa a função LOCAL
             Toast.show({
                 type: 'success',
                 text1: 'Sucesso',
-                text2: 'Título atualizado!',
+                text2: 'Título atualizado localmente!',
             });
         } else {
-            await addTitle(titleData); // Agora passamos o objeto titleData completo
+            await addTitle(titleData); // <--- Usa a função LOCAL
             Toast.show({
                 type: 'success',
                 text1: 'Sucesso',
-                text2: 'Título adicionado!',
+                text2: 'Título adicionado localmente!',
             });
         }
-        navigation.goBack(); // Volta para a tela anterior (TitleListScreen)
+        navigation.goBack();
     };
 
     return (
