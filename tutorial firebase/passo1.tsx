@@ -1,32 +1,111 @@
-// PASSO 1: Configurar Firebase (Auth + Firestore)
-// Arquivo: src/config/firebaseConfig.ts
-// src/config/firebaseConfig.ts
+// src/screens/ProfileScreen.tsx
 
 // import de pacotes
-import { initializeApp } from 'firebase/app';
-import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    ScrollView,
+    Alert,
+    Animated,
+    Easing,
+} from 'react-native';
+// ... resto dos imports ...
 
-// IMPORTANTE: Substitua pelos seus valores reais do Firebase
-const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_AUTH_DOMAIN",
-    projectId: "SEU_PROJECT_ID",
-    storageBucket: "SEU_STORAGE_BUCKET",
-    messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-    appId: "SEU_APP_ID"
+const ProfileScreen: React.FC = () => {
+    // ... código existente ...
+    const { user, logout } = useAuth();
+    const [isConnected, setIsConnected] = useState(true);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    // Animação de rotação
+    const rotation = useRef(new Animated.Value(0)).current;
+
+    // Verificar conexão
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            setIsConnected(state.isConnected ?? false);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    // Animação de rotação quando está sincronizando
+    useEffect(() => {
+        let animation: Animated.CompositeAnimation | null = null;
+
+        if (isSyncing) {
+            animation = Animated.loop(
+                Animated.timing(rotation, {
+                    toValue: 1,
+                    duration: 1000,
+                    easing: Easing.linear,
+                    useNativeDriver: true,
+                })
+            );
+            animation.start();
+        } else {
+            rotation.setValue(0);
+            if (animation) {
+                animation.stop();
+            }
+        }
+
+        return () => {
+            if (animation) {
+                animation.stop();
+            }
+        };
+    }, [isSyncing, rotation]);
+
+    const spin = rotation.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0deg', '360deg'],
+    });
+
+    // ... resto do código (handleSync, handleChangePassword, handleLogout) ...
+
+    return (
+        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+            <View style={styles.profileSection}>
+                <View style={styles.avatarContainer}>
+                    <MaterialIcons name="account-circle" size={80} color={themeColors.primary} />
+                </View>
+                <Text style={styles.email}>{user.email}</Text>
+            </View>
+
+            <View style={styles.actionsSection}>
+                <TouchableOpacity
+                    style={[styles.actionButton, !isConnected && styles.actionButtonDisabled]}
+                    onPress={handleSync}
+                    disabled={isSyncing || !isConnected}
+                >
+                    <View style={styles.actionButtonContent}>
+                        <Animated.View
+                            style={isSyncing ? { transform: [{ rotate: spin }] } : undefined}
+                        >
+                            <MaterialIcons
+                                name="sync"
+                                size={24}
+                                color={themeColors.text}
+                            />
+                        </Animated.View>
+                        <Text style={styles.actionButtonText}>
+                            {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+
+                {/* ... resto dos botões ... */}
+            </View>
+        </ScrollView>
+    );
 };
 
-// Inicializar Firebase App
-const app = initializeApp(firebaseConfig);
-
-// Inicializar Auth com persistência no AsyncStorage
-export const auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
-});
-
-// Inicializar Firestore
-export const db = getFirestore(app);
-
-export default app;
+const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light) =>
+    StyleSheet.create({
+        // ... estilos existentes ...
+        // REMOVER o estilo syncIndicator, não é mais necessário
+    });
