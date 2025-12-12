@@ -20,6 +20,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { importTitlesFromTXTFile, exportTitlesToTXTFile } from '@/services/jsonService';
 import TitleListItem from '@/components/TitleListItem';
+import { SyncButton } from '@/components/SyncButton';
 
 type TitleListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TitleList'>;
 
@@ -98,6 +99,7 @@ const TitleListScreen: React.FC = () => {
             title: ` Minhas leituras (${titles.length})`,
             headerRight: () => (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <SyncButton />
                     <ThemeToggleButton />
                     <TouchableOpacity onPress={() => setMenu(true)} style={{ marginLeft: 15 }}>
                         <Entypo name="dots-three-vertical" size={24} color={themeColors.icon} />
