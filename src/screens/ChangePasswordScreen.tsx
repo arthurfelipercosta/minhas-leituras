@@ -14,15 +14,20 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Toast from 'react-native-toast-message';
+import { MaterialIcons } from '@expo/vector-icons';
 
-// improt de arquivos
+// import de arquivos
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
+import { RootStackParamList } from 'App';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ChangePassword'>;
 
 const ChangePasswordScreen: React.FC = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp>();
     const { theme } = useTheme();
     const themeColors = colors[theme];
     const styles = createStyles(theme, themeColors);
@@ -33,6 +38,10 @@ const ChangePasswordScreen: React.FC = () => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleChangePassword = async () => {
         if (!currentPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
@@ -94,35 +103,65 @@ const ChangePasswordScreen: React.FC = () => {
                 <View style={styles.formContainer}>
                     <Text style={styles.title}>Trocar Senha</Text>
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Senha Atual"
-                        placeholderTextColor={themeColors.textSecondary}
-                        value={currentPassword}
-                        onChangeText={setCurrentPassword}
-                        secureTextEntry
-                        autoCapitalize="none"
-                    />
+                    {/* Senha Atual */}
+                    <View style={styles.passwordContainer}>
+                        <TextInput
+                            style={styles.passwordInput}
+                            placeholder="Senha Atual"
+                            placeholderTextColor={themeColors.textSecondary}
+                            value={currentPassword}
+                            onChangeText={setCurrentPassword}
+                            secureTextEntry={!showCurrentPassword}
+                            autoCapitalize="none"
+                        />
+                        <TouchableOpacity onPress={() => setShowCurrentPassword(v => !v)}>
+                            <MaterialIcons
+                                name={showCurrentPassword ? 'visibility-off' : 'visibility'}
+                                size={24}
+                                color={themeColors.textSecondary}
+                            />
+                        </TouchableOpacity>
+                    </View>
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Nova Senha"
-                        placeholderTextColor={themeColors.textSecondary}
-                        value={newPassword}
-                        onChangeText={setNewPassword}
-                        secureTextEntry
-                        autoCapitalize="none"
-                    />
+                    {/* Nova Senha */}
+                    <View style={styles.passwordContainer}>
+                        <TextInput
+                            style={styles.passwordInput}
+                            placeholder="Nova Senha"
+                            placeholderTextColor={themeColors.textSecondary}
+                            value={newPassword}
+                            onChangeText={setNewPassword}
+                            secureTextEntry={!showNewPassword}
+                            autoCapitalize="none"
+                        />
+                        <TouchableOpacity onPress={() => setShowNewPassword(v => !v)}>
+                            <MaterialIcons
+                                name={showNewPassword ? 'visibility-off' : 'visibility'}
+                                size={24}
+                                color={themeColors.textSecondary}
+                            />
+                        </TouchableOpacity>
+                    </View>
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Confirmar Nova Senha"
-                        placeholderTextColor={themeColors.textSecondary}
-                        value={confirmPassword}
-                        onChangeText={setConfirmPassword}
-                        secureTextEntry
-                        autoCapitalize="none"
-                    />
+                    {/* Confirmar Nova Senha */}
+                    <View style={styles.passwordContainer}>
+                        <TextInput
+                            style={styles.passwordInput}
+                            placeholder="Confirmar Nova Senha"
+                            placeholderTextColor={themeColors.textSecondary}
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            secureTextEntry={!showConfirmPassword}
+                            autoCapitalize="none"
+                        />
+                        <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)}>
+                            <MaterialIcons
+                                name={showConfirmPassword ? 'visibility-off' : 'visibility'}
+                                size={24}
+                                color={themeColors.textSecondary}
+                            />
+                        </TouchableOpacity>
+                    </View>
 
                     <TouchableOpacity
                         style={styles.primaryButton}
@@ -173,6 +212,22 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
             marginBottom: 15,
             borderWidth: 1,
             borderColor: themeColors.border,
+            fontSize: 16,
+        },
+        passwordContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: themeColors.card,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: themeColors.border,
+            marginBottom: 15,
+            paddingHorizontal: 10,
+        },
+        passwordInput: {
+            flex: 1,
+            height: 50,
+            color: themeColors.text,
             fontSize: 16,
         },
         primaryButton: {

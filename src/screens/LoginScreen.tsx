@@ -21,7 +21,7 @@ const LoginScreen: React.FC = () => {
     const themeColors = colors[theme];
     const styles = createStyles(theme, themeColors);
 
-    const { signIn, signUp, resetPassword } = useAuth();
+    const { signIn, signUp, resetPassword, user } = useAuth();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -29,6 +29,12 @@ const LoginScreen: React.FC = () => {
     const [isLoginMode, setIsLoginMode] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [showResetPassword, setShowResetPassword] = useState(false);
+
+    React.useEffect(() => {
+        if(user) {
+            navigation.navigate('Profile' as any);
+        }
+    }, [user, navigation]);
 
     const handleLogin = async () => {
         if (!email.trim() || !password.trim()) {
