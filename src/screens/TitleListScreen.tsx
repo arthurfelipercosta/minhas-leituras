@@ -20,7 +20,6 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { importTitlesFromTXTFile, exportTitlesToTXTFile } from '@/services/jsonService';
 import TitleListItem from '@/components/TitleListItem';
-import { SyncButton } from '@/components/SyncButton';
 import { ProfileButton } from '@/components/ProfileButton';
 
 type TitleListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TitleList'>;
@@ -109,11 +108,6 @@ const TitleListScreen: React.FC = () => {
             ),
         });
     }, [navigation, themeColors, titles.length]);
-
-    // Função auxiliar para formatar o capítulo para exibição (sem .00 se for inteiro)
-    const formatChapterForDisplay = (chapter: number): string => {
-        return Number.isInteger(chapter) ? chapter.toString() : chapter.toFixed(1); // Garante que seja um inteiro e converte para string
-    };
 
     // Carrega os títulos toda vez que a tela foca
     useFocusEffect(

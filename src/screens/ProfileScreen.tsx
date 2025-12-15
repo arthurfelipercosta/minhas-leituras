@@ -1,7 +1,7 @@
 // src/screens/ProfileScreen.tsx
 
 // import de pacotes
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -9,7 +9,9 @@ import {
     StyleSheet,
     ScrollView,
     ActivityIndicator,
-    Alert
+    Alert,
+    Animated,
+    Easing,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,7 +24,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
 import { RootStackParamList } from 'App';
-import { fullSync } from '@/services/syncService';
+import { syncTitlesFromFirebase, syncTitlesToFirebase } from '@/services/syncService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -35,10 +37,76 @@ const ProfileScreen: React.FC = () => {
     const { user, logout, loading } = useAuth();
     const [isConnected, setIsConnected] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+
+    const syncIconName = !isConnected ? 'sync-problem' : 'sync';
+    const syncLabel = !isConnected
+        ? 'Sem conexão'
+        : isSyncing
+            ? 'Sincronizando...'
+            : 'Sincronizar';
+
+    const rotation = useRef(new Animated.Value(0)).current;
+    const uploadTranslation = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (isSyncing) {
+            const loop = Animated.loop(
+                Animated.timing(rotation, {
+                    toValue: 1,
+                    duration: 800,
+                    easing: Easing.linear,
+                    useNativeDriver: true,
+                })
+            );
+            loop.start();
+            return () => loop.stop();
+        } else {
+            rotation.setValue(0);
+        }
+    }, [isSyncing, rotation]);
+
+    useEffect(() => {
+        if (isUploading) {
+            const loop = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(uploadTranslation, {
+                        toValue: -15,
+                        duration: 3000,
+                        easing: Easing.out(Easing.quad),
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(uploadTranslation, {
+                        toValue: 0,
+                        duration: 300,
+                        easing: Easing.in(Easing.quad),
+                        useNativeDriver: true,
+                    }),
+                ])
+            );
+            loop.start();
+            return () => loop.stop();
+        } else {
+            uploadTranslation.setValue(0);
+        }
+    }, [isUploading, uploadTranslation]);
+
+    const uploadAnimatedStyle = { transform: [{ translateY: uploadTranslation }] };
+
+    const rotateStyle = {
+        transform: [
+            {
+                rotate: rotation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '360deg'],
+                }),
+            },
+        ],
+    };
 
     // Verificar conexão
     useEffect(() => {
-        const unsubscribe = NetInfo.addEventListener(state => {
+        const unsubscribe = NetInfo.addEventListener((state) => {
             setIsConnected(state.isConnected ?? false);
         });
 
@@ -57,11 +125,12 @@ const ProfileScreen: React.FC = () => {
 
         try {
             setIsSyncing(true);
-            await fullSync();
+            // Agora: só baixa da nuvem e faz merge; o lastUpdate mais recente ganha
+            await syncTitlesFromFirebase();
             Toast.show({
                 type: 'success',
                 text1: 'Sincronização concluída!',
-                text2: 'Seus dados foram sincronizados com sucesso.',
+                text2: 'Seus dados locais foram atualizados a partir da nuvem.',
             });
         } catch (error: any) {
             Toast.show({
@@ -71,6 +140,35 @@ const ProfileScreen: React.FC = () => {
             });
         } finally {
             setIsSyncing(false);
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!isConnected) {
+            Toast.show({
+                type: 'error',
+                text1: 'Sem conexão',
+                text2: 'Verifique sua conexão com a internet.',
+            });
+            return;
+        }
+
+        try {
+            setIsUploading(true);
+            await syncTitlesToFirebase();
+            Toast.show({
+                type: 'success',
+                text1: 'Upload concluído!',
+                text2: 'Seus dados locais foram enviados para a nuvem.',
+            });
+        } catch (error: any) {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro no upload',
+                text2: error.message || 'Não foi possível enviar os dados para a nuvem.',
+            });
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -117,7 +215,7 @@ const ProfileScreen: React.FC = () => {
             // Se não estiver logado, redireciona para login
             navigation.navigate('Login' as any);
         }
-    }, [loading, user, navigation])
+    }, [loading, user, navigation]);
 
     if (loading) {
         return (
@@ -133,25 +231,47 @@ const ProfileScreen: React.FC = () => {
                 <View style={styles.avatarContainer}>
                     <MaterialIcons name="account-circle" size={80} color={themeColors.primary} />
                 </View>
-                <Text style={styles.email}>{user.email}</Text>
+                <Text style={styles.email}>{user?.email}</Text>
             </View>
 
             <View style={styles.actionsSection}>
+                {/* Botão SINCRONIZAR (baixar da nuvem) */}
                 <TouchableOpacity
                     style={[styles.actionButton, !isConnected && styles.actionButtonDisabled]}
                     onPress={handleSync}
                     disabled={isSyncing || !isConnected}
                 >
                     <View style={styles.actionButtonContent}>
-                        <MaterialIcons
-                            name={isSyncing ? 'sync' : 'sync'}
-                            size={24}
-                            color={themeColors.text}
-                        />
+                        <Animated.View style={rotateStyle}>
+                            <MaterialIcons
+                                name={syncIconName}
+                                size={24}
+                                color={themeColors.text}
+                            />
+                        </Animated.View>
                         <Text style={styles.actionButtonText}>
-                            {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+                            {syncLabel}
                         </Text>
-                        {isSyncing && (
+                    </View>
+                </TouchableOpacity>
+
+                {/* Botão UPLOAD (enviar para a nuvem) */}
+                <TouchableOpacity
+                    style={[styles.actionButton, !isConnected && styles.actionButtonDisabled]}
+                    onPress={handleUpload}
+                    disabled={isUploading || !isConnected}
+                >
+                    <View style={styles.actionButtonContent}>
+                        <Animated.View style={isUploading ? uploadAnimatedStyle : undefined}>
+                            <MaterialIcons name="arrow-upward"
+                                size={24}
+                                color={themeColors.text}
+                            />
+                        </Animated.View>
+                        <Text style={styles.actionButtonText}>
+                            {isUploading ? 'Enviando...' : 'Upload'}
+                        </Text>
+                        {isUploading && (
                             <ActivityIndicator
                                 size="small"
                                 color={themeColors.primary}
@@ -161,6 +281,7 @@ const ProfileScreen: React.FC = () => {
                     </View>
                 </TouchableOpacity>
 
+                {/* Botão TROCAR SENHA */}
                 <TouchableOpacity
                     style={styles.actionButton}
                     onPress={handleChangePassword}
@@ -171,6 +292,7 @@ const ProfileScreen: React.FC = () => {
                     </View>
                 </TouchableOpacity>
 
+                {/* Botão SAIR */}
                 <TouchableOpacity
                     style={[styles.actionButton, styles.logoutButton]}
                     onPress={handleLogout}
