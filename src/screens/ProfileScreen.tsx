@@ -1,7 +1,7 @@
 // src/screens/ProfileScreen.tsx
 
 // import de pacotes
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,9 +9,7 @@ import {
     StyleSheet,
     ScrollView,
     ActivityIndicator,
-    Alert,
-    Animated,
-    Easing,
+    Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -34,7 +32,7 @@ const ProfileScreen: React.FC = () => {
     const themeColors = colors[theme];
     const styles = createStyles(theme, themeColors);
 
-    const { user, logout } = useAuth();
+    const { user, logout, loading } = useAuth();
     const [isConnected, setIsConnected] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
 
@@ -114,10 +112,19 @@ const ProfileScreen: React.FC = () => {
         );
     };
 
-    if (!user) {
-        // Se não estiver logado, redireciona para login
-        navigation.navigate('Login' as any);
-        return null;
+    useEffect(() => {
+        if (!user && !loading) {
+            // Se não estiver logado, redireciona para login
+            navigation.navigate('Login' as any);
+        }
+    }, [loading, user, navigation])
+
+    if (loading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={themeColors.primary} />
+            </View>
+        );
     }
 
     return (
