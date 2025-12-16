@@ -25,6 +25,7 @@ import { addTitle, updateTitle, getTitles } from '@/services/storageServices';
 import { Title } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
+import { uploadImageToFirebase } from '@/services/imageUploadService';
 import CoverImageInput from '@/components/CoverImageInput'; // Importar o componente da capa
 
 type TitleDetailScreenProps = NativeStackScreenProps<RootStackParamList, 'TitleDetail'>;
@@ -147,6 +148,22 @@ const TitleDetailScreen: React.FC = () => {
                 text2: 'Por favor, insira uma URL válida para o site (ex: https://example.com).',
             });
             return;
+        }
+
+        let uploadUrl = coverImageUri;
+
+        if (coverImageUri && coverImageUri.startsWith('file://')) {
+            const fileName = `capa-${isEditing && id ? id : Date.now()}.jpg`;
+            try {
+                uploadUrl = await uploadImageToFirebase(coverImageUri, fileName);
+            } catch (e) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Erro ao enviar imagem',
+                    text2: 'Falha ao subir a imagem de capa para o servidor.',
+                });
+                return;
+            }
         }
 
         const titleData: Title = {

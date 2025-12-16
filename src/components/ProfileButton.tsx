@@ -10,12 +10,16 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 // import de arquivos
 import { useAuth } from '@/context/AuthContext';
 import { RootStackParamList } from 'App';
+import { useTheme } from '@/context/ThemeContext';
+import { colors } from '@/styles/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const ProfileButton = () => {
     const navigation = useNavigation<NavigationProp>();
     const { user } = useAuth();
+    const { theme } = useTheme();
+    const themeColors = colors[theme];
 
     const handlePress = () => {
         if (user) {
@@ -29,7 +33,7 @@ export const ProfileButton = () => {
 
     // Determinar ícone baseado no estado de autenticação
     const iconName: 'account-circle' | 'no-accounts' = user ? 'account-circle' : 'no-accounts';
-    const iconColor = user ? '#4CAF50' : '#FFFFFF'; // Verde quando logado, branco quando deslogado
+    const iconColor = user ? '#4CAF50' : themeColors.text; // Verde quando logado, tema quando deslogado
 
     return (
         <TouchableOpacity
