@@ -25,6 +25,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
 import { RootStackParamList } from 'App';
 import { syncTitlesFromFirebase, syncTitlesToFirebase } from '@/services/syncService';
+import { requestAccountDeletionService, cancelAccountDeletionService } from '@/services/userService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -176,6 +177,36 @@ const ProfileScreen: React.FC = () => {
         navigation.navigate('ChangePassword' as any);
     };
 
+    const handleRequestDeletion = async () => {
+        Alert.alert('Confirmar Exclusão de Conta',
+            'Sua conta serápermanentemente excluída em 15 dias. Você pode cancelar a exclusão fazendo login novamente nesse período. Deseja continuar?',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: "Deletar",
+                    onPress: async () => {
+                        try {
+                            await requestAccountDeletionService();
+                            Toast.show({
+                                type: 'success',
+                                text1: 'Exclusão Solicitada!',
+                                text2: 'Sua conta será excluída em 15 dias. Você foi desconectado.',
+                            });
+                            navigation.navigate('Login' as any); // Ou para a tela inicial
+                        } catch (error: any) {
+                            Toast.show({
+                                type: 'error',
+                                text1: 'Erro',
+                                text2: error.message || 'Falha ao solicitar exclusão.',
+                            });
+                        }
+                    },
+                }
+            ],
+            { cancelable: false }
+        );
+    }
+
     const handleLogout = () => {
         Alert.alert(
             'Confirmar Logout',
@@ -220,7 +251,7 @@ const ProfileScreen: React.FC = () => {
     if (loading) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color={themeColors.primary} />
+                <ActivityIndicator size='large' color={themeColors.primary} />
             </View>
         );
     }
@@ -229,7 +260,7 @@ const ProfileScreen: React.FC = () => {
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <View style={styles.profileSection}>
                 <View style={styles.avatarContainer}>
-                    <MaterialIcons name="account-circle" size={80} color={themeColors.primary} />
+                    <MaterialIcons name='account-circle' size={80} color={themeColors.primary} />
                 </View>
                 <Text style={styles.email}>{user?.email}</Text>
             </View>
@@ -263,7 +294,7 @@ const ProfileScreen: React.FC = () => {
                 >
                     <View style={styles.actionButtonContent}>
                         <Animated.View style={isUploading ? uploadAnimatedStyle : undefined}>
-                            <MaterialIcons name="arrow-upward"
+                            <MaterialIcons name='arrow-upward'
                                 size={24}
                                 color={themeColors.text}
                             />
@@ -273,7 +304,7 @@ const ProfileScreen: React.FC = () => {
                         </Text>
                         {isUploading && (
                             <ActivityIndicator
-                                size="small"
+                                size='small'
                                 color={themeColors.primary}
                                 style={styles.syncIndicator}
                             />
@@ -287,9 +318,16 @@ const ProfileScreen: React.FC = () => {
                     onPress={handleChangePassword}
                 >
                     <View style={styles.actionButtonContent}>
-                        <MaterialIcons name="lock" size={24} color={themeColors.text} />
+                        <MaterialIcons name='lock' size={24} color={themeColors.text} />
                         <Text style={styles.actionButtonText}>Trocar Senha</Text>
                     </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={handleRequestDeletion}
+                >
+                    <Text style={styles.deleteButtonText}>Deletar Conta</Text>
                 </TouchableOpacity>
 
                 {/* Botão SAIR */}
@@ -298,7 +336,7 @@ const ProfileScreen: React.FC = () => {
                     onPress={handleLogout}
                 >
                     <View style={styles.actionButtonContent}>
-                        <MaterialIcons name="logout" size={24} color="#FF5252" />
+                        <MaterialIcons name='logout' size={24} color='#FF5252' />
                         <Text style={[styles.actionButtonText, styles.logoutText]}>Sair</Text>
                     </View>
                 </TouchableOpacity>
@@ -363,6 +401,18 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
         },
         logoutText: {
             color: '#FF5252',
+        },
+        deleteButton: {
+            backgroundColor: 'red',
+            padding: 15,
+            borderRadius: 5,
+            alignItems: 'center',
+            marginTop: 30,
+        },
+        deleteButtonText: {
+            color: 'white',
+            fontSize: 16,
+            fontWeight: 'bold',
         },
     });
 

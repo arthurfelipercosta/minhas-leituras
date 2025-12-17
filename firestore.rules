@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Regra para a coleção userTitles
+    match /userTitles/{userId} {
+      // Permite leitura e escrita apenas se o usuário está autenticado
+      // e o userId do documento corresponde ao UID do usuário autenticado
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Regra padrão para negar acesso a outras coleções
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

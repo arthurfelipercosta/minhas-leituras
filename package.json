@@ -2,8 +2,10 @@
   "name": "minhas-leituras",
   "version": "2.2.2",
   "expo": {
-    "install":{
-      "exclude": [ "@react-native-async-storage/async-storage"]
+    "install": {
+      "exclude": [
+        "@react-native-async-storage/async-storage"
+      ]
     }
   },
   "main": "index.ts",
@@ -50,6 +52,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "firebase-tools": "^15.0.0",
     "typescript": "~5.9.2"
   },
   "private": true
