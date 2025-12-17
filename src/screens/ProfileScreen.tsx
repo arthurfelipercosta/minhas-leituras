@@ -179,7 +179,7 @@ const ProfileScreen: React.FC = () => {
 
     const handleRequestDeletion = async () => {
         Alert.alert('Confirmar Exclusão de Conta',
-            'Sua conta serápermanentemente excluída em 15 dias. Você pode cancelar a exclusão fazendo login novamente nesse período. Deseja continuar?',
+            'Sua conta será permanentemente excluída em 15 dias. Você pode cancelar a exclusão fazendo login novamente nesse período. Deseja continuar?',
             [
                 { text: 'Cancelar', style: 'cancel' },
                 {
