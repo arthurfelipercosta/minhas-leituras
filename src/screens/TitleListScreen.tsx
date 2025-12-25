@@ -33,6 +33,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import TitleListItem from '@/components/TitleListItem';
 import { ProfileButton } from '@/components/ProfileButton';
+import { SyncButton } from '@/components/SyncButton';
 
 import { auth } from '@/config/firebaseConfig';
 import { signOut, User } from 'firebase/auth';
