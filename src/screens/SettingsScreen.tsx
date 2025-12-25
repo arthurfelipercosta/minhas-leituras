@@ -2,7 +2,7 @@
 
 // import de pacotes
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -26,58 +26,90 @@ import {
 const SettingsScreen: React.FC = () => {
     const { theme } = useTheme();
     const navigation = useNavigation();
-    
+
     const themeColors = colors[theme];
     const styles = createSettingsStyles(theme, themeColors);
 
-    const [configs, setConfigs] = useState<UserSettings | null>(null);
-    const [originalPreferences, setOriginalPreferences] = useState<NotificationPreferences | null>(null);
+    // ESTADOS TEMPORÁRIOS PARA AS AÇÕES DE TOQUE
+    const [tempShortTap, setTempShortTap] = useState<TapAction>('open_url');
+    const [tempLongPress, setTempLongPress] = useState<TapAction>('edit');
+
+    // ESTADOS TEMPORÁRIOS PARA AS PREFERÊNCIAS DE NOTIFICAÇÃO
+    const [originalPreferences, setOriginalPreferences] = useState<NotificationPreferences | null>(null); // Guardará o estado ORIGINAL das notificações
     const [tempIsEnabled, setTempIsEnabled] = useState(false);
     const [tempDate, setTempDate] = useState(new Date(2000, 0, 1, 8, 0));
     const [showPicker, setShowPicker] = useState(false);
 
-    useEffect(() => {
-        getSettings().then(setConfigs);
-    }, []);
+    // ESTADO PARA O LOADING DO BOTÃO SALVAR
+    const [isSaving, setIsSaving] = useState(false);
+    // ESTADO PARA INDICAR SE TODAS AS CONFIGURAÇÕES INICIAIS FORAM CARREGADAS
+    const [isLoaded, setIsLoaded] = useState(false);
 
+
+    // CARREGA TODAS AS CONFIGURAÇÕES (TOQUES E NOTIFICAÇÕES) E INICIALIZA TODOS OS ESTADOS TEMPORÁRIOS
     useEffect(() => {
-        async function loadPreferences() {
+        async function loadAllInitialSettings() {
+            // Carrega configurações de toque
+            const loadedSettings = await getSettings();
+            setTempShortTap(loadedSettings.shortTapAction);
+            setTempLongPress(loadedSettings.longPressAction);
+
+            // Carrega preferências de notificação
             const prefs = await getNotificationPreferences();
-            setOriginalPreferences(prefs);
+            setOriginalPreferences(prefs); // Guarda o estado original das notificações para comparação no 'Confirmar'
             setTempIsEnabled(prefs.enabled);
             const newDate = new Date(2000, 0, 1, prefs.hour, prefs.minute);
             setTempDate(newDate);
-        }
-        loadPreferences();
-    }, []);
 
+            setIsLoaded(true); // Marca que tudo foi carregado
+        }
+        loadAllInitialSettings();
+    }, []); // Executa apenas uma vez ao montar o componente
+
+    // Monitora e configura notificações ao focar na tela (principalmente para agendamentos)
+    // A solicitação de permissão agora acontece ao ligar o switch, não no foco, mas ainda pode ser verificada.
     useFocusEffect(
         useCallback(() => {
-            async function setupNotifications() {
-                const prefs = await getNotificationPreferences();
-                if (prefs.enabled) {
-                    await requestNotificationPermissions();
+            // Só executa se o componente já estiver carregado com os dados iniciais
+            if (isLoaded) {
+                async function setupNotificationsOnFocus() {
+                    const prefs = await getNotificationPreferences(); // Puxa as prefs mais recentes do storage
+                    if (prefs.enabled) {
+                        // Não solicitamos permissão aqui para evitar prompt duplo se já ativou pelo switch
+                        // Mas garantimos que os agendamentos estejam corretos
+                        await scheduleAllReleaseNotifications();
+                    } else {
+                        // Se as notificações estão desativadas no storage, cancela tudo.
+                        await Notifications.cancelAllScheduledNotificationsAsync();
+                    }
                 }
-                await scheduleAllReleaseNotifications();
+                setupNotificationsOnFocus();
             }
-            setupNotifications();
-        }, [])
+        }, [isLoaded]) // Depende de isLoaded para garantir que os dados iniciais já foram carregados
     );
 
-    if (!configs) {
-        return <View style={styles.container} />;
+    // Renderiza um loader se as configurações ainda não foram carregadas
+    if (!isLoaded) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={themeColors.primary} />
+            </View>
+        );
     }
 
     const tapOptions = [
-        { label: 'Abrir Página', value: 'edit' },
-        { label: 'Abrir Link', value: 'open_url' },
-        { label: 'Copiar Link', value: 'copy_url' },
+        { label: 'Editar', value: 'edit' },
+        { label: 'Copiar', value: 'copy_url' },
+        { label: 'Abrir', value: 'open_url' },
     ];
 
-    const handleSettingsChange = (key: keyof UserSettings, value: TapAction) => {
-        const newConfigs = { ...configs, [key]: value };
-        setConfigs(newConfigs);
-        saveSettings(newConfigs);
+    // ATUALIZA APENAS OS ESTADOS TEMPORÁRIOS DAS CONFIGURAÇÕES DE TOQUE
+    const handleSettingsChange = (key: 'shortTapAction' | 'longPressAction', value: TapAction) => {
+        if (key === 'shortTapAction') {
+            setTempShortTap(value);
+        } else {
+            setTempLongPress(value);
+        }
     };
 
     const onTimeChange = (event: any, selectedDate?: Date) => {
@@ -88,47 +120,69 @@ const SettingsScreen: React.FC = () => {
     };
 
     const handleConfirm = async () => {
+        setIsSaving(true); // Ativa o loading
         try {
+            // 1. Salva as configurações de toque (dos estados TEMPORÁRIOS)
+            const newSettings: UserSettings = {
+                shortTapAction: tempShortTap,
+                longPressAction: tempLongPress,
+            };
+            await saveSettings(newSettings);
+            
+            // 2. Lógica para notificações
             const hourToSave = tempDate.getHours();
             const minuteToSave = tempDate.getMinutes();
 
             const newPreferences: NotificationPreferences = {
-                enabled: tempIsEnabled,
+                enabled: tempIsEnabled, // Usamos o estado ATUAL do switch (que já pode ter sido alterado pelo onValueChange)
                 hour: hourToSave,
                 minute: minuteToSave,
             };
 
             await saveNotificationPreferences(newPreferences);
-            setOriginalPreferences(newPreferences);
+            
+            let toastMessageText2 = 'Suas preferências foram atualizadas.'; // Mensagem padrão para o Toast
 
+            // Lógica para agendamento/cancelamento de notificações e mensagens específicas
             if (newPreferences.enabled) {
-                const granted = await requestNotificationPermissions();
-                if (granted) {
-                    await scheduleAllReleaseNotifications();
-                    Toast.show({ type: 'success', text1: 'Configurações salvas!', text2: 'Suas notificações estão prontas.' });
-                } else {
-                    setTempIsEnabled(false);
-                    await saveNotificationPreferences({ ...newPreferences, enabled: false });
-                    await scheduleAllReleaseNotifications();
-                }
+                // Se o switch está ativado AQUI, significa que a permissão já foi solicitada pelo onValueChange
+                // ou já estava concedida. Apenas agendamos.
+                await scheduleAllReleaseNotifications();
+                toastMessageText2 = 'Suas notificações estão prontas.';
             } else {
+                // Se as novas preferências estão desativadas
                 await Notifications.cancelAllScheduledNotificationsAsync();
-                Toast.show({ type: 'info', text1: 'Notificações desativadas' });
+                if (originalPreferences?.enabled) { // Se estava ativada e agora foi desativada
+                    toastMessageText2 = 'Notificações desativadas.';
+                }
+                // Se já estava desativada e continua desativada, a mensagem padrão já serve.
             }
+            
+            // ATUALIZA O ESTADO 'originalPreferences' APÓS SALVAR, para refletir o estado salvo
+            const updatedOriginalPreferences = await getNotificationPreferences();
+            setOriginalPreferences(updatedOriginalPreferences);
+
+            // Exibe o toast de sucesso geral
+            Toast.show({
+                type: 'success',
+                text1: 'Configurações salvas!',
+                text2: toastMessageText2
+            });
+
         } catch (error) {
             console.error("Erro ao salvar/agendar notificações:", error);
             Toast.show({ type: 'error', text1: 'Erro ao salvar', text2: 'Houve um problema ao salvar as configurações.' });
         } finally {
-            navigation.goBack();
+            setIsSaving(false); // Desativa o loading
+            navigation.goBack(); // Volta para a tela anterior
         }
     };
 
     const handleCancel = () => {
-        if (originalPreferences) {
-            setTempIsEnabled(originalPreferences.enabled);
-            const newDate = new Date(2000, 0, 1, originalPreferences.hour, originalPreferences.minute);
-            setTempDate(newDate);
-        }
+        // AGORA ESTÁ CORRETO: SIMPLESMENTE VOLTA.
+        // Como todos os estados da tela são temporários, ao navegar de volta,
+        // o componente será reinicializado (ou os estados serão redefinidos),
+        // descartando todas as mudanças não confirmadas.
         navigation.goBack();
     };
 
@@ -143,7 +197,7 @@ const SettingsScreen: React.FC = () => {
                 <Text style={styles.label}>Toque Curto</Text>
                 <SwitchSelector
                     options={tapOptions}
-                    initial={tapOptions.findIndex(opt => opt.value === configs.shortTapAction)}
+                    initial={tapOptions.findIndex(opt => opt.value === tempShortTap)} // Usa o estado TEMPORÁRIO
                     onPress={(value) => handleSettingsChange('shortTapAction', value as TapAction)}
                     buttonColor={themeColors.primary}
                     backgroundColor={themeColors.background}
@@ -154,14 +208,14 @@ const SettingsScreen: React.FC = () => {
                 <Text style={styles.label}>Toque Longo (Segurar)</Text>
                 <SwitchSelector
                     options={tapOptions}
-                    initial={tapOptions.findIndex(opt => opt.value === configs.longPressAction)}
+                    initial={tapOptions.findIndex(opt => opt.value === tempLongPress)} // Usa o estado TEMPORÁRIO
                     onPress={(value) => handleSettingsChange('longPressAction', value as TapAction)}
                     buttonColor={themeColors.primary}
                     backgroundColor={themeColors.background}
                     textColor={themeColors.text}
                 />
             </View>
-
+            
             <View style={styles.clockPlaceholder}>
                 <TouchableOpacity onPress={() => setShowPicker(true)} style={styles.timeDisplayWrapper}>
                     <Text style={styles.timeDisplayText}>{displayHour}</Text>
@@ -184,7 +238,17 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.settingRow}>
                 <Text style={styles.settingLabel}>Receber Avisos Diários</Text>
                 <Switch
-                    onValueChange={setTempIsEnabled}
+                    onValueChange={async (value) => { // LÓGICA DE PERMISSÃO AO LIGAR O SWITCH
+                        setTempIsEnabled(value); // Atualiza o estado local imediatamente
+                        if (value) { // Se o usuário está tentando ATIVAR as notificações
+                            const granted = await requestNotificationPermissions(); // Solicita permissão (com Alert.alert)
+                            if (!granted) {
+                                // Se a permissão for negada, reverte o switch visualmente
+                                setTempIsEnabled(false);
+                                // A mensagem de erro é tratada pelo Alert.alert no service
+                            }
+                        }
+                    }}
                     value={tempIsEnabled}
                     trackColor={{ false: themeColors.border, true: themeColors.primary }}
                     thumbColor={tempIsEnabled ? themeColors.primary : themeColors.text}
@@ -195,8 +259,16 @@ const SettingsScreen: React.FC = () => {
                 <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleCancel}>
                     <Text style={styles.buttonText}>Cancelar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={handleConfirm}>
-                    <Text style={styles.buttonText}>Confirmar</Text>
+                <TouchableOpacity
+                    style={[styles.button, styles.confirmButton]}
+                    onPress={handleConfirm}
+                    disabled={isSaving} // Desabilitar botão durante o loading
+                >
+                    {isSaving ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                        <Text style={styles.buttonText}>Confirmar</Text>
+                    )}
                 </TouchableOpacity>
             </View>
 

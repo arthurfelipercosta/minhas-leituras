@@ -1,10 +1,11 @@
 // src/services/notificationService.ts
 
 // import de pacotes
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Notifications from 'expo-notifications';
 import Toast from "react-native-toast-message";
+import * as Notifications from 'expo-notifications';
+import * as Linking from 'expo-linking';
 
 // import de arquivos
 import { getTitles } from "@/services/storageServices";
@@ -25,7 +26,6 @@ export async function getNotificationPreferences(): Promise<NotificationPreferen
     const stored = await AsyncStorage.getItem('notificationPreferences');
     return stored ? JSON.parse(stored) : { enabled: false, hour: 8, minute: 0 }; // Padrão 8:00 AM
 }
-
 
 // Função para calcular próxima ocorrência da notificação
 function getNextNotificationTime(weekday: number, hour: number, minute: number): Date {
@@ -53,7 +53,7 @@ function getNextNotificationTime(weekday: number, hour: number, minute: number):
 export async function scheduleAllReleaseNotifications() {
     const { enabled, hour, minute } = await getNotificationPreferences();
 
-    if(Platform.OS === 'android') {
+    if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('minhas_leituras_releases', {
             name: 'Lançamentos de Títulos',
             importance: Notifications.AndroidImportance.MAX,
@@ -143,7 +143,16 @@ export async function requestNotificationPermissions(): Promise<boolean> {
         finalStatus = status;
     }
     if (finalStatus !== 'granted') {
-        Toast.show({ type: 'error', text1: 'Permissão Negada', text2: 'Não será possível enviar notificações.' });
+        // REMOVIDO: Toast.show({ type: 'error', text1: 'Permissão Negada', text2: 'Não será possível enviar notificações.' });
+        
+        Alert.alert(
+            "Permissão de Notificação Necessária",
+            "Para receber avisos diários, por favor, conceda a permissão de notificações nas configurações do seu celular.",
+            [
+                { text: "Cancelar", style: "cancel" },
+                { text: "Abrir Configurações", onPress: () => Linking.openSettings() }
+            ]
+        );
         return false;
     }
     return true;

@@ -1,6 +1,13 @@
 {
   "name": "minhas-leituras",
-  "version": "1.7.0",
+  "version": "2.2.2",
+  "expo": {
+    "install": {
+      "exclude": [
+        "@react-native-async-storage/async-storage"
+      ]
+    }
+  },
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -12,8 +19,9 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
-    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-async-storage/async-storage": "1.24.0",
     "@react-native-community/datetimepicker": "8.4.4",
+    "@react-native-community/netinfo": "11.4.1",
     "@react-navigation/native": "^7.1.19",
     "@react-navigation/native-stack": "^7.6.2",
     "@react-navigation/stack": "^7.6.3",
@@ -44,6 +52,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "firebase-tools": "^15.0.0",
     "typescript": "~5.9.2"
   },
   "private": true

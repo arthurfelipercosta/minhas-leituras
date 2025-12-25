@@ -10,11 +10,16 @@ import { StyleSheet } from 'react-native';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
+import { AuthProvider } from '@/context/AuthContext';
+
+// import de páginas
 import TitleListScreen from '@/screens/TitleListScreen';
 import TitleDetailScreen from '@/screens/TitleDetailScreen';
 import StatisticsScreen from '@/screens/StatisticsScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
-import LoginScreen from '@/screens/auth/LoginScreen';
+import LoginScreen from '@/screens/LoginScreen';
+import ChangePasswordScreen from '@/screens/ChangePasswordScreen';
+import ProfileScreen from '@/screens/ProfileScreen';
 
 
 export type RootStackParamList = {
@@ -23,6 +28,8 @@ export type RootStackParamList = {
   Settings: undefined;
   Statistics: undefined;
   Login: undefined;
+  ChangePassword: undefined;
+  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -68,9 +75,9 @@ function AppNavigator() {
             title: 'Configurações',
             headerRight: () => <ThemeToggleButton />,
           }}
-          />
+        />
         <Stack.Screen
-          name='Statistics'        
+          name='Statistics'
           component={StatisticsScreen}
           options={{
             title: 'Estatísticas',
@@ -80,7 +87,24 @@ function AppNavigator() {
         <Stack.Screen
           name='Login'
           component={LoginScreen}
-          options={{ headerShown: false }}
+          options={{
+            title: 'Login',
+          }}
+        />
+        <Stack.Screen
+          name='ChangePassword'
+          component={ChangePasswordScreen}
+          options={{
+            title: 'Trocar Senha'
+          }}
+        />
+        <Stack.Screen
+          name='Profile'
+          component={ProfileScreen}
+          options={{
+            title: 'Perfil',
+            headerRight: () => <ThemeToggleButton />
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
@@ -90,8 +114,10 @@ function AppNavigator() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppNavigator />
-      <Toast />
+      <AuthProvider>
+        <AppNavigator />
+        <Toast />
+      </AuthProvider>
     </ThemeProvider>
   );
 }

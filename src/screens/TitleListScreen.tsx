@@ -32,6 +32,7 @@ import { colors } from '@/styles/colors';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import TitleListItem from '@/components/TitleListItem';
+import { ProfileButton } from '@/components/ProfileButton';
 
 import { auth } from '@/config/firebaseConfig';
 import { signOut, User } from 'firebase/auth';
@@ -207,20 +208,8 @@ const TitleListScreen: React.FC = () => {
         navigation.setOptions({
             title: ` Minhas leituras (${titles.length})`,
             headerRight: () => (
-                <View style={styles.headerRightContainer}>
-                    {/* Ícone de Nuvem com Toque Rápido/Longo */}
-                    <TouchableOpacity
-                        onPress={handleQuickCloudSync} // Toque rápido: sincroniza
-                        onLongPress={handleCloudLoginOrOptions} // Toque longo: vai para a tela de login/opções
-                        style={styles.cloudIconContainer}
-                        disabled={isSyncing} // Desabilita enquanto sincroniza
-                    >
-                        {isSyncing ? (
-                            <ActivityIndicator size="small" color={themeColors.icon} />
-                        ) : (
-                            <AntDesign name="cloud-sync" size={24} color={themeColors.icon} />
-                        )}
-                    </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <ProfileButton />
                     <ThemeToggleButton />
                     <TouchableOpacity onPress={() => setMenu(true)} style={styles.dotsMenuButton}>
                         <Entypo name="dots-three-vertical" size={24} color={themeColors.icon} />
@@ -230,10 +219,7 @@ const TitleListScreen: React.FC = () => {
         });
     }, [navigation, themeColors, titles.length, isSyncing, handleQuickCloudSync, handleCloudLoginOrOptions]); // Adicionado dependências
 
-    const formatChapterForDisplay = (chapter: number): string => {
-        return Number.isInteger(chapter) ? chapter.toString() : chapter.toFixed(1);
-    };
-
+    // Carrega os títulos toda vez que a tela foca
     useFocusEffect(
         useCallback(() => {
             loadData();
