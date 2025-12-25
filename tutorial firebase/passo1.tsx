@@ -1,29 +1,32 @@
+// PASSO 1: Configurar Firebase (Auth + Firestore)
+// Arquivo: src/config/firebaseConfig.ts
 // src/config/firebaseConfig.ts
 
 // import de pacotes
 import { initializeApp } from 'firebase/app';
 import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-// import { getAnalytics } from 'firebase/analytics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// IMPORTANTE: Substitua pelos seus valores reais do Firebase
 const firebaseConfig = {
-    apiKey: "AIzaSyDLvrrFX_WghFoOuUAR0AHqHfIwIfed2-A",
-    authDomain: "minhas-leituras-d0b49.firebaseapp.com",
-    projectId: "minhas-leituras-d0b49",
-    storageBucket: "minhas-leituras-d0b49.firebasestorage.app",
-    messagingSenderId: "699263974728",
-    appId: "1:699263974728:web:5ba8c7e9b58e3dfd85877d",
-    measurementId: "G-5JHPG25EYM"
+    apiKey: "SUA_API_KEY",
+    authDomain: "SEU_AUTH_DOMAIN",
+    projectId: "SEU_PROJECT_ID",
+    storageBucket: "SEU_STORAGE_BUCKET",
+    messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+    appId: "SEU_APP_ID"
 };
 
+// Inicializar Firebase App
 const app = initializeApp(firebaseConfig);
-// const analytics = getAnalytics(app);
 
+// Inicializar Auth com persistência no AsyncStorage
 export const auth = initializeAuth(app, {
     persistence: getReactNativePersistence(AsyncStorage)
 });
 
+// Inicializar Firestore
 export const db = getFirestore(app);
 
 export default app;
