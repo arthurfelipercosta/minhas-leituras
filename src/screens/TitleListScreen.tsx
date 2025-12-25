@@ -209,7 +209,7 @@ const TitleListScreen: React.FC = () => {
             title: ` Minhas leituras (${titles.length})`,
             headerRight: () => (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <ProfileButton />
+                    <SyncButton />
                     <ThemeToggleButton />
                     <TouchableOpacity onPress={() => setMenu(true)} style={styles.dotsMenuButton}>
                         <Entypo name="dots-three-vertical" size={24} color={themeColors.icon} />
