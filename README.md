@@ -21,20 +21,36 @@ Com ele, é possível cadastrar títulos, visualizar detalhes, acompanhar estat�
 
 > Prints reais do app em funcionamento
 
-### 📚 Lista de títulos
-![Lista de títulos](./screenshots/title-list.png)
-
-### 📖 Detalhes do título
-![Detalhes do título](./screenshots/title-detail.png)
-
-### 📊 Estatísticas
-![Estatísticas](./screenshots/statistics.png)
-
-### ⚙️ Configurações
-![Configurações](./screenshots/settings.png)
-
-### 🔐 Login
-![Login](./screenshots/login.png)
+<table align="center">
+  <tr>
+    <th>📚 Lista de títulos</th>
+    <th>📖 Detalhes do título</th>
+    <th>📊 Estatísticas</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./screenshots/title-list.png" width="230"/>
+    </td>
+    <td align="center">
+      <img src="./screenshots/title-detail.png" width="230"/>
+    </td>
+    <td align="center">
+      <img src="./screenshots/statistics.png" width="230"/>
+    </td>
+  </tr>
+</table>
+<table align="center">
+  <tr>
+    <th>⚙️ Configurações</th>
+    <th>🔐 Login</th>
+    <th>🔆 Modo claro</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./screenshots/settings.png" width="230"/></td>
+    <td align="center"><img src="./screenshots/login.png" width="230"/></td>
+    <td align="center"><img src="./screenshots/light-mode.png" width="230"/></td>
+  </tr>
+</table>
 
 ---
 
