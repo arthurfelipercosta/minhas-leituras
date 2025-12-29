@@ -7,13 +7,13 @@ Com ele, é possível cadastrar títulos, visualizar detalhes, acompanhar estat�
 
 ## ✨ Funcionalidades
 
-- 📖 Cadastro e listagem de livros / títulos
+- 📖 Cadastro e listagem de mangás / livros / títulos / páginas / links
 - 🔍 Visualização de detalhes do título
 - 📊 Estatísticas de leitura
 - 🌗 Alternância entre tema claro e escuro
 - 🔐 Autenticação de usuários
 - ⚙️ Tela de configurações
-- 🔔 Feedbacks visuais com Toasts
+- 🔔 Feedbacks visuais com mensagens Toast
 
 ---
 
