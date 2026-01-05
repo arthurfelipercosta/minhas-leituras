@@ -1,4 +1,4 @@
-// App.tsx
+// src/App.tsx
 
 // import de pacotes
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
@@ -19,7 +19,6 @@ import StatisticsScreen from '@/screens/StatisticsScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import LoginScreen from '@/screens/LoginScreen';
 import ChangePasswordScreen from '@/screens/ChangePasswordScreen';
-import ProfileScreen from '@/screens/ProfileScreen';
 
 
 export type RootStackParamList = {
@@ -29,7 +28,6 @@ export type RootStackParamList = {
   Statistics: undefined;
   Login: undefined;
   ChangePassword: undefined;
-  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -96,14 +94,6 @@ function AppNavigator() {
           component={ChangePasswordScreen}
           options={{
             title: 'Trocar Senha'
-          }}
-        />
-        <Stack.Screen
-          name='Profile'
-          component={ProfileScreen}
-          options={{
-            title: 'Perfil',
-            headerRight: () => <ThemeToggleButton />
           }}
         />
       </Stack.Navigator>
