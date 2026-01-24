@@ -4,6 +4,7 @@
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Toast from 'react-native-toast-message';
+import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 
 // import de arquivos
@@ -49,55 +50,61 @@ function AppNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator initialRouteName='TitleList' id={undefined}>
-        <Stack.Screen
-          name='TitleList'
-          component={TitleListScreen}
-          options={{
-            title: 'Minhas Leituras'
-          }}
-        />
-        <Stack.Screen
-          name='TitleDetail'
-          component={TitleDetailScreen}
-          options={{
-            title: 'Detalhes do título',
-            headerRight: () => <ThemeToggleButton />,
-          }}
-        />
-        <Stack.Screen
-          name='Settings'
-          component={SettingsScreen}
-          options={{
-            title: 'Configurações',
-            headerRight: () => <ThemeToggleButton />,
-          }}
-        />
-        <Stack.Screen
-          name='Statistics'
-          component={StatisticsScreen}
-          options={{
-            title: 'Estatísticas',
-            headerRight: () => <ThemeToggleButton />,
-          }}
-        />
-        <Stack.Screen
-          name='Login'
-          component={LoginScreen}
-          options={{
-            title: 'Login',
-          }}
-        />
-        <Stack.Screen
-          name='ChangePassword'
-          component={ChangePasswordScreen}
-          options={{
-            title: 'Trocar Senha'
-          }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <StatusBar
+        style={theme === 'dark' ? 'light' : 'dark'}
+        backgroundColor={themeColors.background} // ajuda no Android
+      />
+      <NavigationContainer theme={navigationTheme}>
+        <Stack.Navigator initialRouteName='TitleList' id={undefined}>
+          <Stack.Screen
+            name='TitleList'
+            component={TitleListScreen}
+            options={{
+              title: 'Minhas Leituras'
+            }}
+          />
+          <Stack.Screen
+            name='TitleDetail'
+            component={TitleDetailScreen}
+            options={{
+              title: 'Detalhes do título',
+              headerRight: () => <ThemeToggleButton />,
+            }}
+          />
+          <Stack.Screen
+            name='Settings'
+            component={SettingsScreen}
+            options={{
+              title: 'Configurações',
+              headerRight: () => <ThemeToggleButton />,
+            }}
+          />
+          <Stack.Screen
+            name='Statistics'
+            component={StatisticsScreen}
+            options={{
+              title: 'Estatísticas',
+              headerRight: () => <ThemeToggleButton />,
+            }}
+          />
+          <Stack.Screen
+            name='Login'
+            component={LoginScreen}
+            options={{
+              title: 'Login',
+            }}
+          />
+          <Stack.Screen
+            name='ChangePassword'
+            component={ChangePasswordScreen}
+            options={{
+              title: 'Trocar Senha'
+            }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </>
   )
 }
 
