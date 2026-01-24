@@ -11,6 +11,7 @@ export interface Title {
     lastUpdate?: string;    // Última atualização
     thumbnailUri?: string;  // Imagem de thumbnail
     coverUri?: string;      // Imagem na tela de detalhes
+    isComplete?: boolean;   // Indica se a obra já está finalizada
 }
 
 // Interface para o modelo de dados do usuário no Firestore

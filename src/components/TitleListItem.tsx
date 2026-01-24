@@ -39,6 +39,9 @@ const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapter
     };
 
     const getBorderColor = () => {
+        // Se a obra estiver concluída, não mostrar borda
+        if (item.isComplete) return undefined;
+
         const today = getTodayAtMidnight();
         const currentDay = today.getDay();
         const isReleaseDay = (item.releaseDay ?? -1) === currentDay;
@@ -64,7 +67,14 @@ const TitleListItem: React.FC<TitleListItemProps> = ({ item, onDelete, onChapter
     );
 
     return (
-        <View style={[styles.titleItem, borderColor && { borderColor, borderWidth: 2 }]}>
+        <View style={[
+            styles.titleItem,
+            borderColor && { borderColor, borderWidth: 2 },
+            item.isComplete && {
+                backgroundColor: theme === 'light' ? 'rgba(100, 116, 139, 0.3)' : 'rgba(255, 193, 7, 0.3)',
+                opacity: 0.85
+            }
+        ]}>
             {item.thumbnailUri ? (
                 <Image source={{ uri: item.thumbnailUri }} style={styles.thumbnail} />
             ) : (

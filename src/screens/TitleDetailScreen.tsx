@@ -67,7 +67,7 @@ const TitleDetailScreen: React.FC = () => {
                     setSiteUrl(titleToEdit.siteUrl || '');
                     setReleaseDay(titleToEdit.releaseDay ?? null);
                     setCoverImageUri(titleToEdit.coverUri || null); // Carrega a URI (que agora pode ser local ou de nuvem, se já sincronizado)
-                    setIsFinished(titleToEdit.lastChapter !== undefined);
+                    setIsFinished(titleToEdit.isComplete || false);
                 } else {
                     Toast.show({
                         type: 'error',
@@ -171,10 +171,11 @@ const TitleDetailScreen: React.FC = () => {
         }
 
         const titleData: Title = {
-            id: isEditing && title?.id ? title.id : '', // O ID será preenchido por addTitle se for novo
+            id: id || '', // O ID será preenchido por addTitle se for novo
             name: titleName,
             currentChapter: chapterNumber,
             lastChapter: isFinished ? lastChapterNumber : undefined,
+            isComplete: isFinished,
             siteUrl: siteUrl.trim() || undefined,
             releaseDay: releaseDay ?? undefined,
             coverUri: coverImageUri || null, // A URI pode ser local ou da nuvem
@@ -316,7 +317,7 @@ const TitleDetailScreen: React.FC = () => {
                         ))}
                     </View>
                     <View style={styles.finishedContainer}>
-                        <Text style={styles.label}>Concluído?</Text>
+                        <Text style={styles.label}>Terminado?</Text>
                         <Switch
                             trackColor={{ false: themeColors.switchInactive, true: themeColors.switchActive }}
                             thumbColor={isFinished ? themeColors.switchActive : themeColors.switchTumb}
@@ -324,19 +325,6 @@ const TitleDetailScreen: React.FC = () => {
                             value={isFinished}
                         />
                     </View>
-                    {isFinished && (
-                        <>
-                            <Text style={styles.label}>Último Capítulo:</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Ex: 150"
-                                placeholderTextColor={themeColors.textSecondary}
-                                keyboardType="decimal-pad"
-                                value={lastChapter}
-                                onChangeText={setLastChapter}
-                            />
-                        </>
-                    )}
                     <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                         <Text style={styles.saveButtonText}>{isEditing ? 'Salvar' : 'Adicionar'}</Text>
                     </TouchableOpacity>
