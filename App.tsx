@@ -6,12 +6,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Toast from 'react-native-toast-message';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // import de arquivos
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { AuthProvider } from '@/context/AuthContext';
+import { SubscriptionProvider } from '@/context/SubscriptionContext';
 
 // import de páginas
 import TitleListScreen from '@/screens/TitleListScreen';
@@ -20,6 +22,7 @@ import StatisticsScreen from '@/screens/StatisticsScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import LoginScreen from '@/screens/LoginScreen';
 import ChangePasswordScreen from '@/screens/ChangePasswordScreen';
+import SubscriptionScreen from '@/screens/SubscriptionScreen';
 
 
 export type RootStackParamList = {
@@ -29,6 +32,7 @@ export type RootStackParamList = {
   Statistics: undefined;
   Login: undefined;
   ChangePassword: undefined;
+  Subscription: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -102,6 +106,14 @@ function AppNavigator() {
               title: 'Trocar Senha'
             }}
           />
+          <Stack.Screen
+            name='Subscription'
+            component={SubscriptionScreen}
+            options={{
+              title: 'Assinatura',
+              headerRight: () => <ThemeToggleButton />
+            }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </>
@@ -110,12 +122,16 @@ function AppNavigator() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <AppNavigator />
-        <Toast />
-      </AuthProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <AppNavigator />
+            <Toast />
+          </SubscriptionProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 

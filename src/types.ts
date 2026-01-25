@@ -21,3 +21,15 @@ export interface UserProfile {
     isPendingDeletion?: boolean;            // true se a exclusão foi solicitada, false caso contrário
     deletionScheduledDate?: string | null;  // Data agendada para exclusão (ISO string) ou null
 }
+
+// Interface para planos de pagamento
+export interface Plan {
+    id: string;
+    name: string;
+    price: number;
+    period: 'monthly' | 'yearly';
+    features: string[];
+    originalPrice?: number;
+    popular?: boolean;  // Destaque para o plano recomendado
+    savings?: string;   // Ex: Economize 20%
+}

@@ -207,7 +207,7 @@ const TitleListScreen: React.FC = () => {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            title: ` Minhas leituras (${titles.length})`,
+            title: `Minhas leituras (${titles.length})`,
             headerRight: () => (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <SyncButton />
@@ -413,6 +413,10 @@ const TitleListScreen: React.FC = () => {
                         <TouchableOpacity style={styles.menuItem} onPress={() => { setMenu(false); handleImportFile(); }}>
                             <FontAwesome6 name='download' size={22} color={themeColors.text} />
                             <Text style={styles.menuItemText}>Importar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenu(false); navigation.navigate('Subscription'); }}>
+                            <FontAwesome6 name='crown' size={22} color={themeColors.text} />
+                            <Text style={styles.menuItemText}>Assinatura Premium</Text>
                         </TouchableOpacity>
                         {user && ( // Mostra o botão de logout apenas se o usuário estiver logado
                             <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
