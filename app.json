@@ -2,7 +2,7 @@
   "expo": {
     "name": "Minhas Leituras",
     "slug": "minhas-leituras",
-    "version": "2.2.2",
+    "version": "3.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -37,11 +37,13 @@
           "color": "#ffffff"
         }
       ],
-      "react-native-google-mobile-ads",
-      {
-        "androidAppId": "ca-app-pub-3940256099942544~3347511713",
-        "iosAppId": "ca-app-pub-3940256099942544~1458002511"
-      }
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ]
     ],
     "extra": {
       "eas": {
