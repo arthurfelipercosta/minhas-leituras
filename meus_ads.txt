@@ -1,0 +1,24 @@
+ID do aplicativo
+ca-app-pub-7065910212630758~6660657596
+
+ID do bloco de anúncios (tela cheia)
+ca-app-pub-7065910212630758/2921314718
+
+ID do bloco de anúncios (rodapé)
+ca-app-pub-7065910212630758/3056454502
+
+
+IDs de teste:
+
+ID do aplicativo (Android):
+ca-app-pub-3940256099942544~3419835251
+ID do aplicativo (iOS):
+ca-app-pub-3940256099942544~1458002511
+ID do bloco de anúncios (Banner - Android):
+ca-app-pub-3940256099942544/6300978111
+ID do bloco de anúncios (Banner - iOS):
+ca-app-pub-3940256099942544/2934735716
+ID do bloco de anúncios (Interstitial - Android):
+ca-app-pub-3940256099942544/1033173712
+ID do bloco de anúncios (Interstitial - iOS):
+ca-app-pub-3940256099942544/4414689100

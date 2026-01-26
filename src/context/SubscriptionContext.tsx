@@ -12,16 +12,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SUBSCRIPTION_KEY = '@MinhasLeituras:subscription';
 
+type SubscriptionPlan = 'free' | 'monthly' | 'yearly'; // Novo tipo para os planos
+
 interface SubscriptionContextType {
-    isPremium: boolean;
-    setIsPremium: (value: boolean) => Promise<void>;
+    subscriptionPlan: SubscriptionPlan; // Alterado de isPremium para subscriptionPlan
+    setSubscriptionPlan: (plan: SubscriptionPlan) => Promise<void>; // Função para definir o plano
     loading: boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [isPremium, setIsPremiumState] = useState(false);
+    const [subscriptionPlan, setSubscriptionPlanState] = useState<SubscriptionPlan>('free'); // Estado inicial como 'free'
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -31,7 +33,12 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
     const loadSubscriptionStatus = async () => {
         try {
             const value = await AsyncStorage.getItem(SUBSCRIPTION_KEY);
-            setIsPremiumState(value === 'true');
+            // Garante que o valor lido seja um dos planos válidos, caso contrário, default para 'free'
+            if (value === 'monthly' || value === 'yearly') {
+                setSubscriptionPlanState(value);
+            } else {
+                setSubscriptionPlanState('free'); // Valor padrão se não for encontrado ou for inválido
+            }
         } catch (error) {
             console.error('Erro ao carregar status de assinatura:', error);
         } finally {
@@ -39,17 +46,17 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
     };
 
-    const setIsPremium = async (value: boolean) => {
+    const setSubscriptionPlan = async (plan: SubscriptionPlan) => { // Renomeado e tipo atualizado
         try {
-            await AsyncStorage.setItem(SUBSCRIPTION_KEY, value.toString());
-            setIsPremiumState(value);
+            await AsyncStorage.setItem(SUBSCRIPTION_KEY, plan); // Armazena a string do plano
+            setSubscriptionPlanState(plan);
         } catch (error) {
             console.error('Erro ao salvar status de assinatura:', error);
         }
     };
 
     return (
-        <SubscriptionContext.Provider value={{ isPremium, setIsPremium, loading }}>
+        <SubscriptionContext.Provider value={{ subscriptionPlan, setSubscriptionPlan, loading }}>
             {children}
         </SubscriptionContext.Provider>
     );

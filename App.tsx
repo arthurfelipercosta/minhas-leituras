@@ -7,13 +7,15 @@ import Toast from 'react-native-toast-message';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads'
 
 // import de arquivos
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import { AuthProvider } from '@/context/AuthContext';
-import { SubscriptionProvider } from '@/context/SubscriptionContext';
+import { SubscriptionProvider, useSubscription } from '@/context/SubscriptionContext';
+import { useAuth } from '@/context/AuthContext';
 
 // import de páginas
 import TitleListScreen from '@/screens/TitleListScreen';
@@ -40,6 +42,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function AppNavigator() {
   const { theme } = useTheme();
   const themeColors = colors[theme];
+  const { user } = useAuth();
+  const { subscriptionPlan } = useSubscription();
+
+  const isFreePlan = subscriptionPlan === 'free';
 
   const navigationTheme = {
     ...(theme === 'dark' ? DarkTheme : DefaultTheme),
