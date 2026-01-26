@@ -26,7 +26,7 @@ const CARD_SPACING = 20;
 
 const SubscriptionScreen: React.FC = () => {
     const { theme } = useTheme();
-    const { isPremium, setIsPremium } = useSubscription();
+    const { subscriptionPlan, setSubscriptionPlan } = useSubscription();
     const navigation = useNavigation();
     const themeColors = colors[theme];
     const styles = createStyles(theme, themeColors);
@@ -35,8 +35,22 @@ const SubscriptionScreen: React.FC = () => {
     const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
     const [scaleAnim] = useState(new Animated.Value(1));
 
+    // Função para mapear subscriptionPlan para plan.id da tela
+    const getCurrentPlanId = (plan: 'free' | 'monthly' | 'yearly'): string => {
+        switch (plan) {
+            case 'free': return 'free';
+            case 'monthly': return 'premium';
+            case 'yearly': return 'premium-yearly';
+        }
+    }
+
     // Estado para armazenar qual plano está ativo (free, premium-monthly, premium-yearly)
-    const [currentPlanId, setCurrentPlanId] = useState<string>(isPremium ? 'premium' : 'free');
+    const [currentPlanId, setCurrentPlanId] = useState<string>(getCurrentPlanId(subscriptionPlan));
+
+    // Atualiza currentPlanId quando subscriptionPlan muda
+    React.useEffect(() => {
+        setCurrentPlanId(getCurrentPlanId(subscriptionPlan));
+    }, [subscriptionPlan]);
 
     // Definição dos planos
     const plans: Plan[] = [
@@ -105,7 +119,7 @@ const SubscriptionScreen: React.FC = () => {
         if (plan.id === 'free') {
             // Permite voltar para o plano grátis
             try {
-                await setIsPremium(false);
+                await setSubscriptionPlan('free');
                 setCurrentPlanId('free');
                 Toast.show({
                     type: 'success',
@@ -126,7 +140,8 @@ const SubscriptionScreen: React.FC = () => {
         try {
             // Aqui você integraria com o sistema de pagamento real
             // Por enquanto, apenas simula a assinatura
-            await setIsPremium(true);
+            const contextPlan = plan.id === 'premium' ? 'monthly' : 'yearly';
+            await setSubscriptionPlan(contextPlan as 'monthly' | 'yearly');
             setCurrentPlanId(plan.id); // Armazena qual plano premium está ativo
             Toast.show({
                 type: 'success',
@@ -292,7 +307,7 @@ const SubscriptionScreen: React.FC = () => {
                 {plans.map((plan, index) => renderPlanCard(plan, index))}
             </View>
 
-            {!isPremium && (
+            {subscriptionPlan === 'free' && (
                 <TouchableOpacity
                     style={styles.restoreButton}
                     onPress={handleRestore}
