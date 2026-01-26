@@ -7,12 +7,12 @@ import Toast from 'react-native-toast-message';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads'
 
 // import de arquivos
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
+import { BannerAd as AppBannerAd } from '@/components/BannerAd';
 import { AuthProvider } from '@/context/AuthContext';
 import { SubscriptionProvider, useSubscription } from '@/context/SubscriptionContext';
 import { useAuth } from '@/context/AuthContext';
@@ -122,6 +122,7 @@ function AppNavigator() {
               }}
             />
           </Stack.Navigator>
+          <AppBannerAd />
         </SafeAreaView>
       </NavigationContainer>
     </>

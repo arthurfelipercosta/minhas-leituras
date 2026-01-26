@@ -34,6 +34,7 @@ import { ThemeToggleButton } from '@/components/ThemeToggleButton';
 import TitleListItem from '@/components/TitleListItem';
 import { ProfileButton } from '@/components/ProfileButton';
 import { SyncButton } from '@/components/SyncButton';
+import { useInterstitialAd } from '@/hooks/useInterstitialAd';
 
 import { auth } from '@/config/firebaseConfig';
 import { signOut, User } from 'firebase/auth';
@@ -44,6 +45,7 @@ const TitleListScreen: React.FC = () => {
     const { theme } = useTheme();
     const themeColors = colors[theme];
     const styles = createStyles(theme, themeColors);
+    const { showAd } = useInterstitialAd();
     const navigation = useNavigation<TitleListScreenNavigationProp>();
 
     const [user, setUser] = useState<User | null>(auth.currentUser);
@@ -158,26 +160,40 @@ const TitleListScreen: React.FC = () => {
             });
             return;
         }
-        setIsSyncing(true);
-        try {
-            await syncLocalToCloud();
-            Toast.show({
-                type: 'success',
-                text1: 'Sincronizado',
-                text2: 'Dados locais enviados para a nuvem.'
-            });
-            await loadData(); // Recarrega os dados locais
-        } catch (error) {
-            Toast.show({
-                type: 'error',
-                text1: 'Erro na Sincronização',
-                text2: (error as Error).message || 'Não foi possível sincronizar com a nuvem.'
-            });
-            console.error('Erro de sincronização rápida:', error);
-        } finally {
-            setIsSyncing(false);
+
+        // Mostra anúncio para usuários free antes de fazer upload
+        const adShown = showAd();
+
+        const performUpload = async () => {
+            setIsSyncing(true);
+            try {
+                await syncLocalToCloud();
+                Toast.show({
+                    type: 'success',
+                    text1: 'Sincronizado',
+                    text2: 'Dados locais enviados para a nuvem.'
+                });
+                await loadData(); // Recarrega os dados locais
+            } catch (error) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Erro na Sincronização',
+                    text2: (error as Error).message || 'Não foi possível sincronizar com a nuvem.'
+                });
+                console.error('Erro de sincronização rápida:', error);
+            } finally {
+                setIsSyncing(false);
+            }
+        };
+
+        if (adShown) {
+            // Se anúncio foi mostrado, espera um pouco antes de fazer upload
+            setTimeout(() => performUpload(), 1000);
+        } else {
+            // Usuário premium ou anúncio não disponível, faz upload direto
+            performUpload();
         }
-    }, [user, loadData]);
+    }, [user, loadData, showAd]);
 
     // --- NOVA FUNÇÃO: Acesso à Tela de Login/Sincronização ---
     const handleCloudLoginOrOptions = useCallback(() => {

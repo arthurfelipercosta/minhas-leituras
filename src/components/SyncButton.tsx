@@ -13,12 +13,14 @@ import Toast from 'react-native-toast-message';
 import { useAuth } from '@/context/AuthContext';
 import { RootStackParamList } from 'App';
 import { fullSync } from '@/services/syncService';
+import { useInterstitialAd } from '@/hooks/useInterstitialAd';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const SyncButton = () => {
     const navigation = useNavigation<NavigationProp>();
     const { user } = useAuth();
+    const { showAd } = useInterstitialAd();
     const [isConnected, setIsConnected] = React.useState(true);
     const [isSyncing, setIsSyncing] = React.useState(false);
 
@@ -91,23 +93,29 @@ export const SyncButton = () => {
                 return;
             }
 
-            try {
-                setIsSyncing(true);
-                await fullSync();
-                Toast.show({
-                    type: 'success',
-                    text1: 'Sincronização concluída!',
-                    text2: 'Seus dados foram sincronizados com sucesso.',
-                });
-            } catch (error: any) {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Erro na sincronização',
-                    text2: error.message || 'Não foi possível sincronizar.',
-                });
-            } finally {
-                setIsSyncing(false);
+            const adShown = showAd();
+            const performSync = async () => {
+                try {
+                    setIsSyncing(true);
+                    await fullSync();
+                    Toast.show({
+                        type: 'success',
+                        text1: 'Sincronização concluída!',
+                        text2: 'Seus dados foram sincronizados com sucesso.',
+                    });
+                } catch (error: any) {
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Erro na sincronização',
+                        text2: error.message || 'Não foi possível sincronizar.',
+                    });
+                } finally {
+                    setIsSyncing(false);
+                }
             }
+
+            if (adShown) { setTimeout(() => performSync(), 1000); }
+            else { performSync(); }
         } else {
             // Se não está logado, ir para tela de login
             navigation.navigate('Login' as any);
