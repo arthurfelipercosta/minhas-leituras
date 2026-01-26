@@ -6,7 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Toast from 'react-native-toast-message';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads'
 
 // import de arquivos
@@ -66,61 +66,63 @@ function AppNavigator() {
         backgroundColor={themeColors.background} // ajuda no Android
       />
       <NavigationContainer theme={navigationTheme}>
-        <Stack.Navigator initialRouteName='TitleList' id={undefined}>
-          <Stack.Screen
-            name='TitleList'
-            component={TitleListScreen}
-            options={{
-              title: 'Minhas Leituras'
-            }}
-          />
-          <Stack.Screen
-            name='TitleDetail'
-            component={TitleDetailScreen}
-            options={{
-              title: 'Detalhes do título',
-              headerRight: () => <ThemeToggleButton />,
-            }}
-          />
-          <Stack.Screen
-            name='Settings'
-            component={SettingsScreen}
-            options={{
-              title: 'Configurações',
-              headerRight: () => <ThemeToggleButton />,
-            }}
-          />
-          <Stack.Screen
-            name='Statistics'
-            component={StatisticsScreen}
-            options={{
-              title: 'Estatísticas',
-              headerRight: () => <ThemeToggleButton />,
-            }}
-          />
-          <Stack.Screen
-            name='Login'
-            component={LoginScreen}
-            options={{
-              title: 'Login',
-            }}
-          />
-          <Stack.Screen
-            name='ChangePassword'
-            component={ChangePasswordScreen}
-            options={{
-              title: 'Trocar Senha'
-            }}
-          />
-          <Stack.Screen
-            name='Subscription'
-            component={SubscriptionScreen}
-            options={{
-              title: 'Assinatura',
-              headerRight: () => <ThemeToggleButton />
-            }}
-          />
-        </Stack.Navigator>
+        <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.background }}>
+          <Stack.Navigator initialRouteName='TitleList' id={undefined}>
+            <Stack.Screen
+              name='TitleList'
+              component={TitleListScreen}
+              options={{
+                title: 'Minhas Leituras'
+              }}
+            />
+            <Stack.Screen
+              name='TitleDetail'
+              component={TitleDetailScreen}
+              options={{
+                title: 'Detalhes do título',
+                headerRight: () => <ThemeToggleButton />,
+              }}
+            />
+            <Stack.Screen
+              name='Settings'
+              component={SettingsScreen}
+              options={{
+                title: 'Configurações',
+                headerRight: () => <ThemeToggleButton />,
+              }}
+            />
+            <Stack.Screen
+              name='Statistics'
+              component={StatisticsScreen}
+              options={{
+                title: 'Estatísticas',
+                headerRight: () => <ThemeToggleButton />,
+              }}
+            />
+            <Stack.Screen
+              name='Login'
+              component={LoginScreen}
+              options={{
+                title: 'Login',
+              }}
+            />
+            <Stack.Screen
+              name='ChangePassword'
+              component={ChangePasswordScreen}
+              options={{
+                title: 'Trocar Senha'
+              }}
+            />
+            <Stack.Screen
+              name='Subscription'
+              component={SubscriptionScreen}
+              options={{
+                title: 'Assinatura',
+                headerRight: () => <ThemeToggleButton />
+              }}
+            />
+          </Stack.Navigator>
+        </SafeAreaView>
       </NavigationContainer>
     </>
   )
