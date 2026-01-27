@@ -8,7 +8,12 @@ import React, {
     useEffect,
     ReactNode
 } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// import de arquivos
+import { db, auth } from '@/config/firebaseConfig';
 
 const SUBSCRIPTION_KEY = '@MinhasLeituras:subscription';
 
@@ -27,8 +32,40 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadSubscriptionStatus();
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                await checkPremiumStatus(user.uid);
+            } else {
+                setSubscriptionPlanState('free');
+                setLoading(false);
+            }
+        });
+        return unsubscribe;
     }, []);
+
+    const checkPremiumStatus = async (userId: string) => {
+        try {
+            const userProfileRef = doc(db, 'userProfiles', userId);
+            const userProfileSnap = await getDoc(userProfileRef);
+
+            if (userProfileSnap.exists()) {
+                const data = userProfileSnap.data();
+                if (data.profileMode === 'premium') {
+                    setSubscriptionPlanState('monthly'); // Ou crie um novo tipo 'admin/lifetime'
+                    await AsyncStorage.setItem(SUBSCRIPTION_KEY, 'monthly');
+                    return;
+                }
+            }
+
+            // Se não existir ou não for premium no banco, carrega do local
+            await loadSubscriptionStatus();
+        } catch (error) {
+            console.error('Erro ao verificar premium no Firestore:', error);
+            await loadSubscriptionStatus();
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const loadSubscriptionStatus = async () => {
         try {
