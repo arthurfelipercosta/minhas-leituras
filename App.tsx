@@ -25,6 +25,7 @@ import SettingsScreen from '@/screens/SettingsScreen';
 import LoginScreen from '@/screens/LoginScreen';
 import ChangePasswordScreen from '@/screens/ChangePasswordScreen';
 import SubscriptionScreen from '@/screens/SubscriptionScreen';
+import ProfileScreen from '@/screens/ProfileScreen';
 
 
 export type RootStackParamList = {
@@ -35,6 +36,7 @@ export type RootStackParamList = {
   Login: undefined;
   ChangePassword: undefined;
   Subscription: undefined;
+  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -66,64 +68,72 @@ function AppNavigator() {
         backgroundColor={themeColors.background} // ajuda no Android
       />
       <NavigationContainer theme={navigationTheme}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.background }}>
-          <Stack.Navigator initialRouteName='TitleList' id={undefined}>
-            <Stack.Screen
-              name='TitleList'
-              component={TitleListScreen}
-              options={{
-                title: 'Minhas Leituras'
-              }}
-            />
-            <Stack.Screen
-              name='TitleDetail'
-              component={TitleDetailScreen}
-              options={{
-                title: 'Detalhes do título',
-                headerRight: () => <ThemeToggleButton />,
-              }}
-            />
-            <Stack.Screen
-              name='Settings'
-              component={SettingsScreen}
-              options={{
-                title: 'Configurações',
-                headerRight: () => <ThemeToggleButton />,
-              }}
-            />
-            <Stack.Screen
-              name='Statistics'
-              component={StatisticsScreen}
-              options={{
-                title: 'Estatísticas',
-                headerRight: () => <ThemeToggleButton />,
-              }}
-            />
-            <Stack.Screen
-              name='Login'
-              component={LoginScreen}
-              options={{
-                title: 'Login',
-              }}
-            />
-            <Stack.Screen
-              name='ChangePassword'
-              component={ChangePasswordScreen}
-              options={{
-                title: 'Trocar Senha'
-              }}
-            />
-            <Stack.Screen
-              name='Subscription'
-              component={SubscriptionScreen}
-              options={{
-                title: 'Assinatura',
-                headerRight: () => <ThemeToggleButton />
-              }}
-            />
-          </Stack.Navigator>
-          <AppBannerAd />
-        </SafeAreaView>
+        {/* <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.background }}> */}
+        <Stack.Navigator initialRouteName='TitleList' id={undefined}>
+          <Stack.Screen
+            name='TitleList'
+            component={TitleListScreen}
+            options={{
+              title: 'Minhas Leituras'
+            }}
+          />
+          <Stack.Screen
+            name='TitleDetail'
+            component={TitleDetailScreen}
+            options={{
+              title: 'Detalhes do título',
+              headerRight: () => <ThemeToggleButton />,
+            }}
+          />
+          <Stack.Screen
+            name='Settings'
+            component={SettingsScreen}
+            options={{
+              title: 'Configurações',
+              headerRight: () => <ThemeToggleButton />,
+            }}
+          />
+          <Stack.Screen
+            name='Statistics'
+            component={StatisticsScreen}
+            options={{
+              title: 'Estatísticas',
+              headerRight: () => <ThemeToggleButton />,
+            }}
+          />
+          <Stack.Screen
+            name='Login'
+            component={LoginScreen}
+            options={{
+              title: 'Login',
+            }}
+          />
+          <Stack.Screen
+            name='ChangePassword'
+            component={ChangePasswordScreen}
+            options={{
+              title: 'Trocar Senha'
+            }}
+          />
+          <Stack.Screen
+            name='Subscription'
+            component={SubscriptionScreen}
+            options={{
+              title: 'Assinatura',
+              headerRight: () => <ThemeToggleButton />
+            }}
+          />
+          <Stack.Screen
+            name='Profile'
+            component={ProfileScreen}
+            options={{
+              title: 'Perfil',
+              headerRight: () => <ThemeToggleButton />
+            }}
+          />
+        </Stack.Navigator>
+        <AppBannerAd />
+        {/* </SafeAreaView> */}
       </NavigationContainer>
     </>
   )

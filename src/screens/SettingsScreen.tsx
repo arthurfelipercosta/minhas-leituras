@@ -257,7 +257,7 @@ const SettingsScreen: React.FC = () => {
 
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleCancel}>
-                    <Text style={styles.buttonText}>Cancelar</Text>
+                    <Text style={styles.buttonTextCancel}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.button, styles.confirmButton]}
@@ -267,7 +267,7 @@ const SettingsScreen: React.FC = () => {
                     {isSaving ? (
                         <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
-                        <Text style={styles.buttonText}>Confirmar</Text>
+                        <Text style={styles.buttonTextConfirm}>Confirmar</Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -360,8 +360,13 @@ const createSettingsStyles = (theme: 'light' | 'dark', themeColors: typeof color
         cancelButton: {
             backgroundColor: themeColors.border,
         },
-        buttonText: {
-            color: '#FFFFFF',
+        buttonTextConfirm: {
+            color: themeColors.textOpposite,
+            fontWeight: 'bold',
+            fontSize: 16,
+        },
+        buttonTextCancel: {
+            color: themeColors.text,
             fontWeight: 'bold',
             fontSize: 16,
         },

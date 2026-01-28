@@ -22,6 +22,7 @@ import Toast from 'react-native-toast-message';
 // import de arquivos
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { colors } from '@/styles/colors';
 import { RootStackParamList } from 'App';
 import { syncTitlesFromFirebase, syncTitlesToFirebase } from '@/services/syncService';
@@ -39,6 +40,7 @@ const ProfileScreen: React.FC = () => {
     const [isConnected, setIsConnected] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
     const syncIconName = !isConnected ? 'sync-problem' : 'sync';
     const syncLabel = !isConnected
@@ -178,34 +180,32 @@ const ProfileScreen: React.FC = () => {
     };
 
     const handleRequestDeletion = async () => {
-        Alert.alert('Confirmar Exclusão de Conta',
-            'Sua conta será permanentemente excluída em 15 dias. Você pode cancelar a exclusão fazendo login novamente nesse período. Deseja continuar?',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: "Deletar",
-                    onPress: async () => {
-                        try {
-                            await requestAccountDeletionService();
-                            Toast.show({
-                                type: 'success',
-                                text1: 'Exclusão Solicitada!',
-                                text2: 'Sua conta será excluída em 15 dias. Você foi desconectado.',
-                            });
-                            navigation.navigate('Login' as any); // Ou para a tela inicial
-                        } catch (error: any) {
-                            Toast.show({
-                                type: 'error',
-                                text1: 'Erro',
-                                text2: error.message || 'Falha ao solicitar exclusão.',
-                            });
-                        }
-                    },
-                }
-            ],
-            { cancelable: false }
-        );
+        setIsDeleteModalVisible(true);
     }
+
+    const confirmDeleteAccount = async () => {
+        try {
+            await requestAccountDeletionService();
+            Toast.show({
+                type: 'success',
+                text1: 'Exclusão Solicitada!',
+                text2: 'Sua conta será excluída em 15 dias. Você foi desconectado.',
+            });
+            navigation.navigate('Login' as any);
+        } catch (error: any) {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro',
+                text2: error.message || 'Falha ao solicitar exclusão.',
+            });
+        } finally {
+            setIsDeleteModalVisible(false);
+        }
+    };
+
+    const cancelDeleteAccount = () => {
+        setIsDeleteModalVisible(false);
+    };
 
     const handleLogout = () => {
         Alert.alert(
@@ -341,6 +341,15 @@ const ProfileScreen: React.FC = () => {
                     </View>
                 </TouchableOpacity>
             </View>
+            <ConfirmationModal
+                isVisible={isDeleteModalVisible}
+                title="Confirmar Exclusão de Conta"
+                message="Sua conta será permanentemente excluída em 15 dias. Você pode cancelar a exclusão fazendo login novamente nesse período. Deseja continuar?"
+                onConfirm={confirmDeleteAccount}
+                onCancel={cancelDeleteAccount}
+                confirmButtonText="Deletar"
+                cancelButtonText="Cancelar"
+            />
         </ScrollView>
     );
 };

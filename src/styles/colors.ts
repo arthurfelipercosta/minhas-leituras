@@ -2,13 +2,14 @@ export const colors = {
     light: {
         background: '#FFFFFF',
         text: '#000000',
+        textOpposite: '#FFFFFF',
         primary: '#6200EE',
         card: '#F5F5F5',
         border: '#E0E0E0',
         icon: '#000000',
         textSecondary: '#666666',
         warning: '#FFA000',
-        danger: '##D32F2F',
+        danger: '#D32F2F',
         ongoing: '#4CAF50',
         switchTumb: '#F5F5F5',
         switchInactive: '#CCCCCC',
@@ -17,6 +18,7 @@ export const colors = {
     dark: {
         background: '#121212',
         text: '#FFFFFF',
+        textOpposite: '#000000',
         primary: '#BB86FC',
         card: '#1E1E1E',
         border: '#272727',
