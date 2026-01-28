@@ -18,16 +18,13 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AntDesign } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import * as ImagePicker from 'expo-image-picker';
 
 //import de arquivos
 import { RootStackParamList } from 'App';
-import { addTitle, updateTitle, getTitles } from '@/services/storageServices'; // Usa as funções LOCAIS
 import { Title } from '@/types';
 import { useTheme } from '@/context/ThemeContext';
 import { colors } from '@/styles/colors';
-import { uploadImageToFirebase } from '@/services/imageUploadService';
-import CoverImageInput from '@/components/CoverImageInput'; // Importar o componente da capa
+import { addTitle, updateTitle, getTitles } from '@/services/storageServices'; // Usa as funções LOCAIS
 
 type TitleDetailScreenProps = NativeStackScreenProps<RootStackParamList, 'TitleDetail'>;
 
@@ -48,7 +45,8 @@ const TitleDetailScreen: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
 
-    const [coverImageUri, setCoverImageUri] = useState<string | null>(null); // Estado para a URI da imagem de capa (local)
+    const [coverImageUrl, setCoverImageUrl] = useState('');
+    const [coverImageUri, setCoverImageUri] = useState<string>(''); // Link da imagem de capa
 
     const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']; // Dias da semana para a UI
 
@@ -66,7 +64,7 @@ const TitleDetailScreen: React.FC = () => {
                     setLastChapter(titleToEdit.lastChapter?.toString() || '');
                     setSiteUrl(titleToEdit.siteUrl || '');
                     setReleaseDay(titleToEdit.releaseDay ?? null);
-                    setCoverImageUri(titleToEdit.coverUri || null); // Carrega a URI (que agora pode ser local ou de nuvem, se já sincronizado)
+                    setCoverImageUri(titleToEdit.coverUri || ''); // Carrega o link da imagem
                     setIsFinished(titleToEdit.isComplete || false);
                 } else {
                     Toast.show({
@@ -85,35 +83,13 @@ const TitleDetailScreen: React.FC = () => {
                 setSiteUrl('');
                 setReleaseDay(null);
                 setIsFinished(false);
-                setCoverImageUri(null);
+                setCoverImageUri('');
             }
         };
         loadTitleData();
     }, [id, navigation]);
 
 
-    const handlePickImage = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            Toast.show({
-                type: 'error',
-                text1: 'Permissão Necessária',
-                text2: 'Precisamos de permissão para acessar sua galeria de fotos.',
-            });
-            return;
-        }
-
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [2, 3], // Proporção de capa
-            quality: 1,
-        });
-
-        if (!result.canceled) {
-            setCoverImageUri(result.assets[0].uri); // Salva a URI local no estado
-        }
-    };
 
     const handleClearSiteUrl = () => {
         setSiteUrl('');
@@ -154,21 +130,15 @@ const TitleDetailScreen: React.FC = () => {
             return;
         }
 
-        let uploadUrl = coverImageUri;
-
-        if (coverImageUri && coverImageUri.startsWith('file://')) {
-            const fileName = `capa-${isEditing && id ? id : Date.now()}.jpg`;
-            try {
-                uploadUrl = await uploadImageToFirebase(coverImageUri, fileName);
-            } catch (e) {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Erro ao enviar imagem',
-                    text2: 'Falha ao subir a imagem de capa para o servidor.',
-                });
-                return;
-            }
+        if (coverImageUri && !/^https?:\/\/.+\..+$/.test(coverImageUri)) {
+            Toast.show({
+                type: 'error',
+                text1: 'Erro',
+                text2: 'Por favor, insira uma URL válida para a imagem (ex: https://example.com/image.jpg).',
+            });
+            return;
         }
+
 
         const titleData: Title = {
             id: id || '', // O ID será preenchido por addTitle se for novo
@@ -178,8 +148,8 @@ const TitleDetailScreen: React.FC = () => {
             isComplete: isFinished,
             siteUrl: siteUrl.trim() || undefined,
             releaseDay: releaseDay ?? undefined,
-            coverUri: coverImageUri || null, // A URI pode ser local ou da nuvem
-            thumbnailUri: coverImageUri || null, // Por enquanto, usa a mesma da capa
+            coverUri: coverImageUri || undefined, // Link da imagem de capa
+            thumbnailUri: coverImageUri || undefined, // Link da imagem de thumbnail
             lastUpdate: new Date().toISOString(),
         };
 
@@ -216,8 +186,6 @@ const TitleDetailScreen: React.FC = () => {
                 keyboardShouldPersistTaps='handled'
             >
                 <View style={styles.form}>
-                    <CoverImageInput imageUri={coverImageUri} onPress={handlePickImage} />
-
                     <Text style={styles.label}>Nome do Título:</Text>
                     <TextInput
                         style={styles.input}
@@ -225,6 +193,25 @@ const TitleDetailScreen: React.FC = () => {
                         placeholderTextColor={themeColors.textSecondary}
                         value={titleName}
                         onChangeText={setTitleName}
+                    />
+
+                    {coverImageUri ? (
+                        <Image
+                            source={{ uri: coverImageUri }}
+                            style={styles.coverImage}
+                            resizeMode="contain"
+                        />
+                    ) : null}
+
+                    <Text style={styles.label}>Link da Imagem de Capa (Opcional):</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Ex: https://example.com/image.jpg"
+                        placeholderTextColor={themeColors.textSecondary}
+                        value={coverImageUri}
+                        onChangeText={setCoverImageUri}
+                        keyboardType="url"
+                        autoCapitalize="none"
                     />
 
                     <Text style={styles.label}>Capítulo Atual:</Text>
@@ -393,6 +380,13 @@ const createStyles = (theme: 'light' | 'dark', themeColors: typeof colors.light)
             textAlign: 'center',
             marginHorizontal: 10,
             marginBottom: 0,
+        },
+        coverImage: {
+            width: '100%',
+            height: 200,
+            borderRadius: 10,
+            marginBottom: 15,
+            backgroundColor: themeColors.card,
         },
         siteUrlInputContainer: {
             flexDirection: 'row',

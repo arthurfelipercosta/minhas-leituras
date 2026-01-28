@@ -9,8 +9,8 @@ export interface Title {
     siteUrl?: string;       // Campo para a URL do site (opcional)
     releaseDay?: number;    // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
     lastUpdate?: string;    // Última atualização
-    thumbnailUri?: string;  // Imagem de thumbnail
-    coverUri?: string;      // Imagem na tela de detalhes
+    thumbnailUri?: string;  // Link da imagem de thumbnail
+    coverUri?: string;      // Link da imagem na tela de detalhes
     isComplete?: boolean;   // Indica se a obra já está finalizada
 }
 
