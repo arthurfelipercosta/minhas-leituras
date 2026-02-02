@@ -1,0 +1,464 @@
+Quero fazer 2 mudanças significativas nessa minha versão da branch "main" do meu app...
+1- Criar a parte de usuários premium/free com um plano mensal e outro anual (vou configurar os pagamento futuramente quando comprar minha licença de google developer)
+
+2- Quero mudar o modo que faço o upload para o firebase, hoje eu subo imagens diretamente, quero subir e salvar apenas URL dessas imagens
+
+Qual das 2 mudanças eu devo fazer primeiro? Porque quero criar uma branch para cada modificação... tanto que já tenho as telas de pagamentos criadas na branch de "plans", mas não tenho nada pronto além disso
+
+PS2: Lembre-se que SEMPRE deve prezar por não deixar alguma brecha para que consigam burlar essa parte de pagamento, pois vou subir para a loja da Play Store depois e se possível deixar com ela a parte de pagamento e recorrência...
+
+pasta: userProfiles
+subpasta: yk1hDTo4QwWXR3Xeqr29GC6DDqB2
+
+Dentro do profile tem esse código todo:
+
+lastSync "2026-01-28T20:19:55.982Z"
+(string)
+titles
+(array)
+0
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/02329b8d-228b-43f3-9b91-9249a297de6b.png"
+(string)
+currentChapter 329
+(number)
+id "25263f79-8fd3-4298-8816-4616a85fc77f"
+(string)
+lastUpdate "2025-12-13T14:27:52.843Z"
+(string)
+name "Blue Lock"
+(string)
+releaseDay 2
+(number)
+siteUrl "https://mangaonline.app/manga/blue-lock-manga-pt-br/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/02329b8d-228b-43f3-9b91-9249a297de6b.png"
+(string)
+1
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/152c0cb2-4ad1-421b-91aa-530f57bc1f15.jpeg"
+(string)
+currentChapter 292
+(number)
+id "5c68b4d9-dbcd-44b8-babe-d84d8d2fdcbc"
+(string)
+lastUpdate "2025-12-11T10:34:23.795Z"
+(string)
+name "Omniscient Reader’s Viewpoint"
+(string)
+releaseDay 2
+(number)
+siteUrl "https://mangaonline.app/manga/omniscient-readers-viewpoint/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/152c0cb2-4ad1-421b-91aa-530f57bc1f15.jpeg"
+(string)
+2
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/9cdd59ca-bc36-4bfc-88ff-419706b9b9d1.png"
+(string)
+currentChapter 380
+(number)
+id "41abef00-0c5c-4b55-9560-2eb61716cb21"
+(string)
+lastUpdate "2025-12-09T19:44:03.787Z"
+(string)
+name "Eleceed"
+(string)
+releaseDay 2
+(number)
+siteUrl "https://mangaonline.app/manga/eleceed/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/9cdd59ca-bc36-4bfc-88ff-419706b9b9d1.png"
+(string)
+3
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/f5cce005-c8db-45f2-b57a-a0bc527234b6.png"
+(string)
+currentChapter 1168
+(number)
+id "7e5b9157-7d4c-4be7-93b1-3b06367c3a23"
+(string)
+lastUpdate "2025-12-05T12:30:09.832Z"
+(string)
+name "One Piece"
+(string)
+releaseDay 5
+(number)
+siteUrl "https://mangaonline.app/manga/one-piece-manga-pt-br/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/f5cce005-c8db-45f2-b57a-a0bc527234b6.png"
+(string)
+4
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/da8ed5c2-e265-48f5-bec8-5404bee899b9.jpeg"
+(string)
+currentChapter 219
+(number)
+id "7329b9e1-6ce0-4467-a85d-4507c357939e"
+(string)
+lastChapter 216
+(number)
+lastUpdate "2025-12-05T12:30:24.467Z"
+(string)
+name "The Greatest Estate Designer"
+(string)
+releaseDay 5
+(number)
+siteUrl "https://mangaonline.app/manga/the-greatest-estate-designer-manga/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/da8ed5c2-e265-48f5-bec8-5404bee899b9.jpeg"
+(string)
+5
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/1ecdecda-c79c-4a6e-baa3-27ff5635a7c8.png"
+(string)
+currentChapter 220
+(number)
+id "b14216ee-ae06-4de5-bde4-36e082dd2c3b"
+(string)
+lastUpdate "2025-12-01T21:38:36.425Z"
+(string)
+name "DanDaDan"
+(string)
+releaseDay 1
+(number)
+siteUrl "https://mangaonline.app/manga/dandadan-manga-pt-br/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/1ecdecda-c79c-4a6e-baa3-27ff5635a7c8.png"
+(string)
+6
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/49f47158-6910-4dbe-96d5-b5373ef56be9.png"
+(string)
+currentChapter 15
+(number)
+id "5fc36e0d-200b-473b-8bb1-46fa63a31359"
+(string)
+lastUpdate "2025-11-27T00:18:11.621Z"
+(string)
+name "Jujutsu Kaisen Modulo"
+(string)
+releaseDay 0
+(number)
+siteUrl "https://mangaonline.app/manga/jujutsu-kaisen-modulo/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/49f47158-6910-4dbe-96d5-b5373ef56be9.png"
+(string)
+7
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/962c7b13-92b8-43b2-b3e6-bb942862bd47.jpeg"
+(string)
+currentChapter 357
+(number)
+id "bf140ee3-9455-4ea5-9827-4750e734f7e6"
+(string)
+lastUpdate "2025-11-29T19:09:54.716Z"
+(string)
+name "Skeleton Soldier Couldn't Protect the Dungeon"
+(string)
+siteUrl "https://remangas.net/manga/o-soldado-esqueleto-nao-pode-proteger-a-masmorra/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/962c7b13-92b8-43b2-b3e6-bb942862bd47.jpeg"
+(string)
+8
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/f8788bcc-1cb4-492f-8660-61211d8bd3f3.png"
+(string)
+currentChapter 222
+(number)
+id "dbccf5b3-dc6f-41f9-916c-37f973d5f1f1"
+(string)
+lastUpdate "2025-12-02T19:47:17.643Z"
+(string)
+name "Chainsaw Man"
+(string)
+releaseDay 2
+(number)
+siteUrl "https://mangaonline.app/manga/chainsaw-man-manga-pt-br/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/f8788bcc-1cb4-492f-8660-61211d8bd3f3.png"
+(string)
+9
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/dcb55294-e02b-4e20-a0e5-dfcc3242b49f.jpeg"
+(string)
+currentChapter 136
+(number)
+id "adc11bda-2932-419d-ad0e-432a7c6b3f8a"
+(string)
+lastUpdate "2025-11-29T19:09:50.235Z"
+(string)
+name "Tentei Shitara Slime Datta Ken"
+(string)
+siteUrl "https://mangaonline.app/manga/tensei-shitara-slime-datta-ken-manga/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/dcb55294-e02b-4e20-a0e5-dfcc3242b49f.jpeg"
+(string)
+10
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/c7c87ba2-50a9-4299-b7c9-00d01961e6f6.png"
+(string)
+currentChapter 65
+(number)
+id "0703e05d-5955-43f2-80f0-5e92a0bfcd59"
+(string)
+name "Solo Leveling: Ragnarok"
+(string)
+releaseDay 3
+(number)
+siteUrl "https://mangaonline.app/manga/solo-leveling-ragnarok/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/c7c87ba2-50a9-4299-b7c9-00d01961e6f6.png"
+(string)
+11
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/c61505be-b2e8-44e8-aa2b-c852b4abd13d.jpeg"
+(string)
+currentChapter 35
+(number)
+id "d893aedd-0575-4bfa-b040-6a224feb6531"
+(string)
+name "Tower of God: Urek's Ascent"
+(string)
+siteUrl "https://mangaonline.app/manga/tower-of-god-ureks-ascent/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/c61505be-b2e8-44e8-aa2b-c852b4abd13d.jpeg"
+(string)
+userId "yk1hDTo4QwWXR3Xeqr29GC6DDqB2" 
+
+pasta: userTitles
+subpasta: yk1hDTo4QwWXR3Xeqr29GC6DDqB2
+
+Dentro da subpasta tem esse código inteiro:
+
+lastSync "2026-01-28T22:36:39.096Z"
+(string)
+titles
+(array)
+0
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/4ab4f57e-23b2-47bf-93aa-1c3bcc31ee65.png"
+(string)
+currentChapter 333
+(number)
+id "25263f79-8fd3-4298-8816-4616a85fc77f"
+(string)
+lastUpdate "2026-01-28T14:31:44.969Z"
+(string)
+name "Blue Lock"
+(string)
+releaseDay 2
+(number)
+siteUrl "https://mangaonline.app/manga/blue-lock-manga-pt-br/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/4ab4f57e-23b2-47bf-93aa-1c3bcc31ee65.png"
+(string)
+1
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/b0684c6b-3d9f-4e32-9cc9-59872ad2f121.jpeg"
+(string)
+currentChapter 299
+(number)
+id "5c68b4d9-dbcd-44b8-babe-d84d8d2fdcbc"
+(string)
+lastUpdate "2026-01-28T22:36:31.885Z"
+(string)
+name "Omniscient Readerâ€™s Viewpoint"
+(string)
+releaseDay 2
+(number)
+siteUrl "https://mangaonline.app/manga/omniscient-readers-viewpoint/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/b0684c6b-3d9f-4e32-9cc9-59872ad2f121.jpeg"
+(string)
+2
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/a5c204f0-34dc-4874-92cf-1ec161567c90.png"
+(string)
+currentChapter 383
+(number)
+id "41abef00-0c5c-4b55-9560-2eb61716cb21"
+(string)
+lastUpdate "2025-12-30T17:58:12.189Z"
+(string)
+name "Eleceed"
+(string)
+releaseDay 2
+(number)
+siteUrl "https://mangaonline.app/manga/eleceed/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/a5c204f0-34dc-4874-92cf-1ec161567c90.png"
+(string)
+3
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/9941ffb6-8a1e-4237-bcdd-739169f98448.png"
+(string)
+currentChapter 1170
+(number)
+id "7e5b9157-7d4c-4be7-93b1-3b06367c3a23"
+(string)
+lastUpdate "2025-12-27T17:13:29.403Z"
+(string)
+name "One Piece"
+(string)
+releaseDay 5
+(number)
+siteUrl "https://mangaonline.app/manga/one-piece-manga-pt-br/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/9941ffb6-8a1e-4237-bcdd-739169f98448.png"
+(string)
+4
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/1065a9bc-40bf-4720-9b33-3b024760b163.jpeg"
+(string)
+currentChapter 222
+(number)
+id "7329b9e1-6ce0-4467-a85d-4507c357939e"
+(string)
+lastChapter 222
+(number)
+lastUpdate "2026-01-03T10:22:02.039Z"
+(string)
+name "The Greatest Estate Designer"
+(string)
+releaseDay 5
+(number)
+siteUrl "https://mangaonline.app/manga/the-greatest-estate-designer-manga/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/1065a9bc-40bf-4720-9b33-3b024760b163.jpeg"
+(string)
+5
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/77aa398b-6fa7-4fb7-92a8-4509d7a979f0.png"
+(string)
+currentChapter 222
+(number)
+id "b14216ee-ae06-4de5-bde4-36e082dd2c3b"
+(string)
+lastUpdate "2026-01-28T22:36:17.973Z"
+(string)
+name "DanDaDan"
+(string)
+releaseDay 1
+(number)
+siteUrl "https://mangaonline.app/manga/dandadan-manga-pt-br/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/77aa398b-6fa7-4fb7-92a8-4509d7a979f0.png"
+(string)
+6
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/3f8dff70-833d-42f5-b514-30f77b5f190d.png"
+(string)
+currentChapter 17
+(number)
+id "5fc36e0d-200b-473b-8bb1-46fa63a31359"
+(string)
+lastUpdate "2025-12-29T19:23:00.931Z"
+(string)
+name "Jujutsu Kaisen Modulo"
+(string)
+releaseDay 0
+(number)
+siteUrl "https://mangaonline.app/manga/jujutsu-kaisen-modulo/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/3f8dff70-833d-42f5-b514-30f77b5f190d.png"
+(string)
+7
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/dc407da3-6129-4517-8ee9-cade67c0a709.jpeg"
+(string)
+currentChapter 357
+(number)
+id "bf140ee3-9455-4ea5-9827-4750e734f7e6"
+(string)
+lastUpdate "2025-12-16T19:48:46.653Z"
+(string)
+name "Skeleton Soldier Couldn't Protect the Dungeon"
+(string)
+siteUrl "https://remangas.net/manga/o-soldado-esqueleto-nao-pode-proteger-a-masmorra/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/dc407da3-6129-4517-8ee9-cade67c0a709.jpeg"
+(string)
+8
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/53c917eb-43c3-4ee7-a1c8-375fa4b3c4cf.png"
+(string)
+currentChapter 225
+(number)
+id "dbccf5b3-dc6f-41f9-916c-37f973d5f1f1"
+(string)
+lastUpdate "2026-01-06T21:28:33.829Z"
+(string)
+name "Chainsaw Man"
+(string)
+releaseDay 2
+(number)
+siteUrl "https://mangaonline.app/manga/chainsaw-man-manga-pt-br/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/53c917eb-43c3-4ee7-a1c8-375fa4b3c4cf.png"
+(string)
+9
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/1369fdac-0bc7-4194-8f1e-61cc7ed0faf0.jpeg"
+(string)
+currentChapter 137
+(number)
+id "adc11bda-2932-419d-ad0e-432a7c6b3f8a"
+(string)
+lastUpdate "2025-12-27T23:20:57.147Z"
+(string)
+name "Tentei Shitara Slime Datta Ken"
+(string)
+siteUrl "https://mangaonline.app/manga/tensei-shitara-slime-datta-ken-manga/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/1369fdac-0bc7-4194-8f1e-61cc7ed0faf0.jpeg"
+(string)
+10
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/86a69955-762d-4917-a116-a53d87dc39b0.png"
+(string)
+currentChapter 67
+(number)
+id "0703e05d-5955-43f2-80f0-5e92a0bfcd59"
+(string)
+lastUpdate "2025-12-31T20:02:38.982Z"
+(string)
+name "Solo Leveling: Ragnarok"
+(string)
+releaseDay 3
+(number)
+siteUrl "https://mangaonline.app/manga/solo-leveling-ragnarok/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/86a69955-762d-4917-a116-a53d87dc39b0.png"
+(string)
+11
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/b1171416-4163-4058-9487-e0d6114da435.jpeg"
+(string)
+currentChapter 38
+(number)
+id "d893aedd-0575-4bfa-b040-6a224feb6531"
+(string)
+lastUpdate "2025-12-31T01:57:45.453Z"
+(string)
+name "Tower of God: Urek's Ascent"
+(string)
+siteUrl "https://mangaonline.app/manga/tower-of-god-ureks-ascent/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/b1171416-4163-4058-9487-e0d6114da435.jpeg"
+(string)
+12
+(map)
+coverUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/ff9b0a6f-7630-4a6c-9724-6ef1e8bd266c.jpeg"
+(string)
+currentChapter 113
+(number)
+id "b7209cf5-b29d-44a5-a9cf-5a691e773aec"
+(string)
+name "Records of Ragnarok"
+(string)
+siteUrl "https://mangasonline.blog/manga/record-of-ragnarok-manga-pt-br/"
+(string)
+thumbnailUri "file:///data/user/0/com.arthurfrc.minhasleituras/cache/ImagePicker/ff9b0a6f-7630-4a6c-9724-6ef1e8bd266c.jpeg"
+(string)
+userId "yk1hDTo4QwWXR3Xeqr29GC6DDqB2" 

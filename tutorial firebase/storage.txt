@@ -1,0 +1,11 @@
+pasta:
+userTitles
+subpasta: yk1hDTo4QwWXR3Xeqr29GC6DDqB2
+Dentro não tem nada ainda
+
+pasta: users
+subpasta: yk1hDTo4QwWXR3Xeqr29GC6DDqB2
+subpasta: covers
+Dentro existem várias imagens como essas:
+https://firebasestorage.googleapis.com/v0/b/minhas-leituras-d0b49.firebasestorage.app/o/users%2Fyk1hDTo4QwWXR3Xeqr29GC6DDqB2%2Fcovers%2Fcapa-0703e05d-5955-43f2-80f0-5e92a0bfcd59.jpg?alt=media&token=02ce579d-090e-4a81-a5be-04bbe6160286
+https://firebasestorage.googleapis.com/v0/b/minhas-leituras-d0b49.firebasestorage.app/o/users%2Fyk1hDTo4QwWXR3Xeqr29GC6DDqB2%2Fcovers%2Fcapa-1766854867638.jpg?alt=media&token=1c3316ed-86bb-4d59-bbf8-650359dd518d
